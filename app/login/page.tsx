@@ -5,12 +5,25 @@ import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
 
   const handleLogin = () => {
-    if (email === "admin@navkon.com" && password === "123456") {
-      localStorage.setItem("isLoggedIn", "true");
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+
+    if (
+      normalizedEmail === "admin" &&
+      normalizedPassword === "123456"
+    ) {
+      if (remember) {
+        localStorage.setItem("isLoggedIn", "true");
+      } else {
+        sessionStorage.setItem("isLoggedIn", "true");
+      }
+
       router.push("/dashboard");
     } else {
       alert("Invalid credentials");
@@ -18,27 +31,42 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow w-80">
-        <h1 className="text-2xl font-bold mb-6 text-center">Navkon Admin</h1>
+    <div className="h-screen flex items-center justify-center bg-background">
+      <div className="bg-surface p-8 rounded-xl shadow w-80">
+        <h1 className="text-2xl font-bold mb-6 text-center text-primary">
+          Navkon Admin
+        </h1>
 
         <input
           type="email"
-          placeholder="Email"
-          className="w-full border p-2 mb-4 rounded"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          className="w-full border border-muted p-2 mb-4 rounded bg-background text-foreground"
         />
 
         <input
           type="password"
-          placeholder="Password"
-          className="w-full border p-2 mb-4 rounded"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="w-full border border-muted p-2 mb-2 rounded bg-background text-foreground"
         />
+
+        {/* Remember Me */}
+        <div className="flex items-center mb-4">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="mr-2"
+          />
+          <label className="text-sm text-muted">Remember me</label>
+        </div>
 
         <button
           onClick={handleLogin}
-          className="w-full bg-black text-white p-2 rounded"
+          className="w-full bg-accent text-white p-2 rounded hover:opacity-90 transition"
         >
           Login
         </button>
