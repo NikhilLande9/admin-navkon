@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Mono, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import AppProviders from "@/components/providers/AppProviders";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// ── Navkon Brand Fonts ────────────────────────────────────────────────────
+const dmMono = DM_Mono({
+  variable: "--font-dm-mono",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSerif = DM_Serif_Display({
+  variable: "--font-dm-serif",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
-  title: "Navkon Admin Panel",
-  description: "Enterprise Admin Dashboard for Navkon",
+  title: "Navkon Admin",
+  description: "Enterprise Admin Dashboard · Navkon Labs",
 };
 
 export default function RootLayout({
@@ -25,9 +28,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${dmMono.variable} ${dmSerif.variable} antialiased`}>
+        {/*
+          AppProviders is a "use client" component that:
+          - Reads navkon_theme from localStorage on mount
+          - Applies the correct theme class to <html> (e.g. "theme-dark")
+          - Exposes ThemeContext ({ dark, toggleTheme }) to the entire tree
+        */}
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
