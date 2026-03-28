@@ -7,9 +7,10 @@ export default function Topbar() {
 
   return (
     <header className="h-14 bg-surface border-b border-border flex items-center justify-between px-6 shrink-0 transition-colors">
-      {/* Brand with Canonical Accents */}
+      {/* Brand */}
       <div className="flex items-center gap-3">
-        <div className="w-0.75 h-4 bg-orange rounded-full" />
+        {/* w-0.75 is not valid Tailwind — use inline style */}
+        <div style={{ width: "3px", height: "16px" }} className="bg-orange rounded-full" />
         <span className="font-serif text-lg tracking-tight">
           <span className="text-orange">Nav</span>
           <span className="text-green">kon</span>
@@ -33,7 +34,7 @@ export default function Topbar() {
         {/* Notifications */}
         <button className="relative w-9 h-9 bg-surface2 border border-border hover:border-orange-border rounded-xl flex items-center justify-center transition-all hover:shadow-sm">
           <span className="text-base">🔔</span>
-          <div className="absolute top-2 right-2 w-2 h-2 bg-orange rounded-full border-2 border-surface" />
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange rounded-full border-2 border-surface" />
         </button>
 
         {/* Avatar */}

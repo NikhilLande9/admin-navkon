@@ -30,18 +30,18 @@ export default function AccountsPage() {
   });
 
   const filtered = accounts.filter((a) => {
+    const q = search.toLowerCase();
     const matchSearch =
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.email.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      a.name.toLowerCase().includes(q) ||
+      a.email.toLowerCase().includes(q) ||
+      a.id.toLowerCase().includes(q);
     const matchRole = roleFilter === "All" || a.role === roleFilter;
     return matchSearch && matchRole;
   });
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+  const toggleSelect = (id: string) =>
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
   const handleAddAccount = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,37 +54,33 @@ export default function AccountsPage() {
       role: newAccount.role,
       plan: newAccount.plan,
       status: "Active",
-      joined: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" })
-        .format(new Date()),
+      joined: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date()),
     };
-
     setAccounts((prev) => [account, ...prev]);
     setNewAccount({ name: "", email: "", role: "Viewer", plan: "Starter" });
     setIsAddModalOpen(false);
   };
 
   const statusColor: Record<string, { bg: string; text: string; dot: string }> = {
-    Active: { bg: "var(--green-dim)", text: "var(--green)", dot: "var(--green)" },
-    Inactive: { bg: "var(--surface2)", text: "var(--ink-muted)", dot: "var(--ink-muted)" },
-    Suspended: { bg: "var(--red-dim)", text: "var(--red)", dot: "var(--red)" },
+    Active:    { bg: "var(--green-dim)",  text: "var(--green)",    dot: "var(--green)"    },
+    Inactive:  { bg: "var(--surface2)",   text: "var(--ink-muted)", dot: "var(--ink-muted)" },
+    Suspended: { bg: "var(--red-dim)",    text: "var(--red)",      dot: "var(--red)"      },
   };
 
-  const planColorMap: Record<string, string> = {
-    Enterprise: "var(--orange)",
-    Pro: "var(--green)",
-    Starter: "var(--ink-soft)",
+  const planColorMap: Record<string, { color: string; bg: string; border: string }> = {
+    Enterprise: { color: "var(--orange)", bg: "var(--orange-dim)", border: "var(--orange-border)" },
+    Pro:        { color: "var(--green)",  bg: "var(--green-dim)",  border: "var(--green-border)"  },
+    Starter:    { color: "var(--ink-soft)", bg: "var(--surface2)", border: "var(--border)"        },
   };
 
   return (
     <div className="font-mono text-ink">
       {/* Header */}
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
         <div>
-          <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">
-            Accounts
-          </h1>
+          <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">Accounts</h1>
           <div className="flex items-center gap-3 mt-2">
-            <div className="h-0.5 w-7 bg-green rounded" />
+            <div className="h-px w-7 bg-green rounded" />
             <p className="text-ink-muted text-sm font-light">
               {accounts.length} total · {accounts.filter((a) => a.status === "Active").length} active
             </p>
@@ -92,7 +88,7 @@ export default function AccountsPage() {
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-orange hover:bg-orange/90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+          className="bg-orange hover:opacity-90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
         >
           + Add Account
         </button>
@@ -102,13 +98,12 @@ export default function AccountsPage() {
       <div className="flex flex-wrap gap-3 items-center mb-6">
         <input
           type="text"
-          placeholder="Search by name or email..."
+          placeholder="Search by name, email or ID…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-surface border border-border text-ink px-4 py-2.5 rounded-xl text-sm w-64 focus:border-orange outline-none transition-colors font-mono placeholder:text-ink-dim"
+          className="bg-surface border border-border text-ink px-4 py-2.5 rounded-xl text-sm w-72 focus:border-orange outline-none transition-colors font-mono placeholder:text-ink-dim"
         />
-
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {["All", ...roles].map((r) => (
             <button
               key={r}
@@ -123,13 +118,12 @@ export default function AccountsPage() {
             </button>
           ))}
         </div>
-
         {selected.length > 0 && (
           <div className="ml-auto flex gap-3">
             <button className="px-5 py-2 text-sm border border-border bg-surface2 hover:border-orange-border hover:text-orange rounded-xl transition-all">
               Suspend ({selected.length})
             </button>
-            <button className="px-5 py-2 text-sm border border-red-dim text-red hover:bg-red/10 rounded-xl transition-all">
+            <button className="px-5 py-2 text-sm border border-red text-red hover:bg-red-dim rounded-xl transition-all">
               Delete
             </button>
           </div>
@@ -137,47 +131,40 @@ export default function AccountsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-grad-card border border-border rounded-2xl overflow-hidden">
+      <div className="bg-surface border border-border rounded-2xl overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-surface2">
               {["", "ID", "Name", "Role", "Plan", "Status", "Joined", ""].map((h, i) => (
-                <th
-                  key={i}
-                  className="px-6 py-4 text-left text-xs uppercase tracking-widest font-normal text-ink-dim"
-                >
+                <th key={i} className="px-6 py-4 text-left text-xs uppercase tracking-widest font-normal text-ink-dim">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a, i) => {
+            {filtered.map((a) => {
               const sc = statusColor[a.status];
-              const planColor = planColorMap[a.plan];
-
+              const pc = planColorMap[a.plan];
               return (
                 <tr
                   key={a.id}
-                  className="acct-row border-b border-border2 last:border-none hover:bg-surface2 transition-colors"
-                  style={{
-                    background: selected.includes(a.id) ? "var(--orange-dim)" : undefined,
-                  }}
+                  className="border-b border-border last:border-none hover:bg-surface2 transition-colors"
+                  style={{ background: selected.includes(a.id) ? "var(--orange-dim)" : undefined }}
                 >
                   <td className="px-6 py-4">
                     <input
                       type="checkbox"
                       checked={selected.includes(a.id)}
                       onChange={() => toggleSelect(a.id)}
-                      className="accent-orange w-4 h-4"
+                      className="w-4 h-4 accent-orange"
                     />
                   </td>
                   <td className="px-6 py-4 text-sm text-ink-muted font-mono">{a.id}</td>
-
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-orange-dim border border-orange-border flex items-center justify-center text-orange font-semibold text-sm">
-                        {a.name.charAt(0)}
+                        {a.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <div className="text-sm text-ink">{a.name}</div>
@@ -185,41 +172,25 @@ export default function AccountsPage() {
                       </div>
                     </div>
                   </td>
-
                   <td className="px-6 py-4 text-sm text-ink-soft">{a.role}</td>
-
                   <td className="px-6 py-4">
                     <span
                       className="text-xs px-3 py-1 rounded-full font-medium border"
-                      style={{
-                        color: planColor,
-                        background: a.plan === "Enterprise" ? "var(--orange-dim)" : a.plan === "Pro" ? "var(--green-dim)" : "var(--surface2)",
-                        border: `1px solid ${a.plan === "Enterprise" ? "var(--orange-border)" : a.plan === "Pro" ? "var(--green-border)" : "var(--border)"}`,
-                      }}
+                      style={{ color: pc.color, background: pc.bg, borderColor: pc.border }}
                     >
                       {a.plan}
                     </span>
                   </td>
-
                   <td className="px-6 py-4">
                     <span
                       className="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full border"
-                      style={{
-                        color: sc.text,
-                        background: sc.bg,
-                        border: `1px solid ${sc.text}40`,
-                      }}
+                      style={{ color: sc.text, background: sc.bg, borderColor: `${sc.text}40` }}
                     >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: sc.dot }}
-                      />
+                      <span className="w-2 h-2 rounded-full" style={{ background: sc.dot }} />
                       {a.status}
                     </span>
                   </td>
-
                   <td className="px-6 py-4 text-sm text-ink-muted">{a.joined}</td>
-
                   <td className="px-6 py-4">
                     <button className="px-4 py-1.5 text-xs border border-border bg-surface2 hover:border-orange-border hover:text-orange rounded-lg transition-all">
                       Edit
@@ -230,7 +201,6 @@ export default function AccountsPage() {
             })}
           </tbody>
         </table>
-
         {filtered.length === 0 && (
           <div className="py-16 text-center text-ink-ghost text-sm">
             {accounts.length === 0
@@ -242,82 +212,60 @@ export default function AccountsPage() {
 
       {/* Add Account Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-surface border border-border rounded-2xl w-full max-w-md p-8">
             <h2 className="font-serif text-2xl font-bold mb-6 text-ink">Add New Account</h2>
-
-            <form onSubmit={handleAddAccount} className="space-y-6">
+            <form onSubmit={handleAddAccount} className="space-y-5">
               <div>
-                <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
-                  Full Name / Company
-                </label>
+                <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">Full Name / Company</label>
                 <input
-                  type="text"
-                  required
-                  value={newAccount.name}
+                  type="text" required value={newAccount.name}
                   onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
-                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
+                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none transition-colors"
                   placeholder="John Doe or Acme Corp"
                 />
               </div>
-
               <div>
-                <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
-                  Email Address
-                </label>
+                <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">Email Address</label>
                 <input
-                  type="email"
-                  required
-                  value={newAccount.email}
+                  type="email" required value={newAccount.email}
                   onChange={(e) => setNewAccount({ ...newAccount, email: e.target.value })}
-                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
+                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none transition-colors"
                   placeholder="name@company.com"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
-                    Role
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">Role</label>
                   <select
                     value={newAccount.role}
                     onChange={(e) => setNewAccount({ ...newAccount, role: e.target.value as any })}
-                    className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
+                    className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none transition-colors"
                   >
-                    {roles.map((role) => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
+                    {roles.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
-                    Plan
-                  </label>
+                  <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">Plan</label>
                   <select
                     value={newAccount.plan}
                     onChange={(e) => setNewAccount({ ...newAccount, plan: e.target.value as any })}
-                    className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
+                    className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none transition-colors"
                   >
-                    {plans.map((plan) => (
-                      <option key={plan} value={plan}>{plan}</option>
-                    ))}
+                    {plans.map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
-
-              <div className="flex gap-3 justify-end pt-4">
+              <div className="flex gap-3 justify-end pt-2">
                 <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  type="button" onClick={() => setIsAddModalOpen(false)}
                   className="px-6 py-2.5 border border-border bg-surface2 hover:bg-surface rounded-xl text-sm transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-2.5 bg-orange hover:bg-orange/90 text-white rounded-xl text-sm font-medium transition-all"
+                  className="px-8 py-2.5 bg-orange hover:opacity-90 text-white rounded-xl text-sm font-medium transition-all"
                 >
                   Add Account
                 </button>
