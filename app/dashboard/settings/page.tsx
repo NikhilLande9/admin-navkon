@@ -17,30 +17,13 @@ function Toggle({ defaultOn = false, onChange }: { defaultOn?: boolean; onChange
   return (
     <div
       onClick={handleClick}
-      style={{
-        width: 42,
-        height: 24,
-        borderRadius: 12,
-        background: on ? "var(--orange)" : "var(--border)",
-        cursor: "pointer",
-        position: "relative",
-        transition: "background 0.2s",
-        flexShrink: 0,
-        border: `1px solid ${on ? "var(--orange)" : "var(--border)"}`,
-      }}
+      className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors shrink-0 border
+        ${on ? "bg-orange border-orange" : "bg-border border-border"}`}
     >
       <div
-        style={{
-          position: "absolute",
-          top: 3,
-          left: on ? 20 : 3,
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          background: on ? "#fff" : "var(--ink-dim)",
-          transition: "left 0.2s",
-          boxShadow: on ? "0 1px 4px rgba(0,0,0,0.3)" : "none",
-        }}
+        className={`absolute top-0.5 w-5 h-5 rounded-full transition-all duration-200 ${
+          on ? "left-6 bg-white shadow" : "left-0.5 bg-ink-dim"
+        }`}
       />
     </div>
   );
@@ -48,24 +31,12 @@ function Toggle({ defaultOn = false, onChange }: { defaultOn?: boolean; onChange
 
 function SettingRow({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "16px 0",
-        borderBottom: "1px solid var(--border2)",
-      }}
-    >
+    <div className="flex justify-between items-center py-4 border-b border-border2">
       <div>
-        <div style={{ fontSize: 13, color: "var(--ink)" }}>{label}</div>
-        {desc && (
-          <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 3, maxWidth: 420 }}>
-            {desc}
-          </div>
-        )}
+        <div className="text-sm text-ink font-sans font-medium">{label}</div>
+        {desc && <div className="text-xs text-ink-muted mt-1 max-w-md font-sans">{desc}</div>}
       </div>
-      <div style={{ flexShrink: 0, marginLeft: 24 }}>{children}</div>
+      <div className="shrink-0 ml-6">{children}</div>
     </div>
   );
 }
@@ -80,58 +51,18 @@ function FieldInput({ placeholder, defaultValue, type = "text" }: {
       type={type}
       defaultValue={defaultValue}
       placeholder={placeholder}
-      style={{
-        background: "var(--surface2)",
-        border: "1px solid var(--border)",
-        color: "var(--ink)",
-        padding: "8px 14px",
-        borderRadius: 6,
-        fontFamily: "'DM Mono', monospace",
-        fontSize: 12,
-        outline: "none",
-        width: 240,
-        transition: "border-color 0.2s",
-      }}
-      onFocus={(e) => (e.target.style.borderColor = "var(--orange)")}
-      onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+      className="bg-surface2 border border-border text-ink px-4 py-2.5 rounded-xl text-sm font-mono w-60 focus:border-orange outline-none transition-colors"
     />
   );
 }
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabName>("General");
-  const [, setThemeKey] = useState(0); // Force re-render when theme changes
-
-  const selectStyle: React.CSSProperties = {
-    background: "var(--surface2)",
-    border: "1px solid var(--border)",
-    color: "var(--ink)",
-    padding: "8px 14px",
-    borderRadius: 6,
-    fontFamily: "inherit",
-    fontSize: 12,
-    outline: "none",
-    minWidth: 180,
-  };
+  const [, setThemeKey] = useState(0);
 
   const saveButton = (label: string) => (
-    <div style={{ marginTop: 32 }}>
-      <button
-        style={{
-          background: "var(--orange)",
-          border: "none",
-          color: "#fff",
-          padding: "10px 28px",
-          borderRadius: 6,
-          cursor: "pointer",
-          fontSize: 12,
-          fontFamily: "inherit",
-          fontWeight: 500,
-          transition: "opacity 0.15s",
-        }}
-        onMouseOver={(e) => ((e.target as HTMLButtonElement).style.opacity = "0.85")}
-        onMouseOut={(e) => ((e.target as HTMLButtonElement).style.opacity = "1")}
-      >
+    <div className="mt-8">
+      <button className="bg-orange hover:bg-orange-mid text-white px-8 py-3 rounded-xl text-sm font-sans font-medium transition-all shadow-lg shadow-orange/15 active:scale-95">
         {label}
       </button>
     </div>
@@ -140,7 +71,7 @@ export default function SettingsPage() {
   const TabContent = ({ tab }: { tab: TabName }) => {
     if (tab === "General") {
       return (
-        <div>
+        <div className="space-y-1">
           <SettingRow label="Organization Name" desc="Displayed in the admin panel and email footers.">
             <FieldInput defaultValue="Navkon" />
           </SettingRow>
@@ -148,7 +79,7 @@ export default function SettingsPage() {
             <FieldInput defaultValue="admin@navkon.io" type="email" />
           </SettingRow>
           <SettingRow label="Timezone" desc="Affects all timestamp displays and scheduled tasks.">
-            <select style={selectStyle}>
+            <select className="bg-surface2 border border-border text-ink px-4 py-2.5 rounded-xl text-sm font-mono focus:border-orange outline-none min-w-48">
               <option>Asia/Kolkata (IST)</option>
               <option>America/New_York (EST)</option>
               <option>Europe/London (GMT)</option>
@@ -163,7 +94,6 @@ export default function SettingsPage() {
               defaultOn={typeof window !== "undefined" ? localStorage.getItem("navkon_theme") !== "light" : true}
               onChange={(isDark) => {
                 localStorage.setItem("navkon_theme", isDark ? "dark" : "light");
-                // Trigger theme update
                 setThemeKey((k) => k + 1);
                 window.dispatchEvent(new StorageEvent("storage", {
                   key: "navkon_theme",
@@ -179,12 +109,12 @@ export default function SettingsPage() {
 
     if (tab === "Security") {
       return (
-        <div>
+        <div className="space-y-1">
           <SettingRow label="Two-Factor Authentication" desc="Require 2FA for all admin accounts.">
             <Toggle defaultOn />
           </SettingRow>
           <SettingRow label="Session Timeout" desc="Automatically log out after inactivity period.">
-            <select style={selectStyle}>
+            <select className="bg-surface2 border border-border text-ink px-4 py-2.5 rounded-xl text-sm font-mono focus:border-orange outline-none min-w-48">
               <option>30 minutes</option>
               <option>1 hour</option>
               <option>4 hours</option>
@@ -192,32 +122,16 @@ export default function SettingsPage() {
             </select>
           </SettingRow>
           <SettingRow label="API Key" desc="Use this key to authenticate with the Navkon API.">
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex gap-3">
               <input
                 type="password"
                 defaultValue="sk-navkon-xxxxxxxxxxx"
-                style={{ ...selectStyle, width: 220, color: "var(--ink-muted)" }}
+                className="bg-surface2 border border-border text-ink-muted px-4 py-2.5 rounded-xl text-sm w-56 font-mono focus:border-orange outline-none"
               />
-              <button style={{
-                background: "transparent",
-                border: "1px solid var(--border)",
-                color: "var(--ink-muted)",
-                padding: "8px 14px",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontSize: 11,
-              }}>
+              <button className="px-5 py-2.5 border border-border text-ink-muted hover:border-orange hover:text-orange rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all">
                 Reveal
               </button>
-              <button style={{
-                background: "transparent",
-                border: "1px solid var(--red-dim)",
-                color: "var(--red)",
-                padding: "8px 14px",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontSize: 11,
-              }}>
+              <button className="px-5 py-2.5 border border-red text-red hover:bg-red/10 rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all">
                 Rotate
               </button>
             </div>
@@ -235,7 +149,7 @@ export default function SettingsPage() {
 
     if (tab === "Notifications") {
       return (
-        <div>
+        <div className="space-y-1">
           <SettingRow label="Service Down Alerts" desc="Notify when a service changes to Stopped or Degraded.">
             <Toggle defaultOn />
           </SettingRow>
@@ -269,59 +183,28 @@ export default function SettingsPage() {
       ];
 
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="space-y-3">
           {integrations.map((intg) => (
             <div
               key={intg.name}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                background: "var(--surface2)",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-                padding: "16px 20px",
-              }}
+              className="flex items-center gap-5 bg-surface2 border border-border rounded-2xl p-6 transition-all hover:border-orange-border"
             >
-              <div style={{ fontSize: 24 }}>{intg.icon}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>{intg.name}</div>
-                <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 2 }}>{intg.desc}</div>
+              <div className="text-3xl">{intg.icon}</div>
+              <div className="flex-1">
+                <div className="font-sans font-medium text-ink">{intg.name}</div>
+                <div className="text-sm text-ink-muted mt-1 font-sans">{intg.desc}</div>
               </div>
               {intg.connected ? (
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{
-                    fontSize: 11,
-                    color: "var(--green)",
-                    background: "var(--green-dim)",
-                    padding: "3px 10px",
-                    borderRadius: 20,
-                    border: "1px solid var(--green-border)",
-                  }}>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-mono uppercase tracking-wider px-4 py-1 bg-green-dim text-green border border-green-border rounded-full">
                     Connected
                   </span>
-                  <button style={{
-                    background: "transparent",
-                    border: "1px solid var(--border)",
-                    color: "var(--ink-muted)",
-                    padding: "6px 14px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 11,
-                  }}>
+                  <button className="px-5 py-2 text-[10px] font-mono uppercase tracking-wider border border-border hover:border-orange hover:text-orange rounded-xl transition-all">
                     Disconnect
                   </button>
                 </div>
               ) : (
-                <button style={{
-                  background: "transparent",
-                  border: "1px solid var(--orange-border)",
-                  color: "var(--orange)",
-                  padding: "6px 16px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 11,
-                }}>
+                <button className="px-6 py-2 text-[10px] font-mono uppercase tracking-wider border border-orange-border text-orange hover:bg-orange/10 rounded-xl transition-all">
                   Connect
                 </button>
               )}
@@ -333,55 +216,26 @@ export default function SettingsPage() {
 
     if (tab === "Danger Zone") {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div className="space-y-4">
           {[
-            {
-              title: "Reset All Settings",
-              desc: "Revert all configuration to factory defaults. This cannot be undone.",
-              btnLabel: "Reset",
-              fill: false,
-            },
-            {
-              title: "Revoke All API Keys",
-              desc: "Immediately invalidate all active API tokens. All integrations will break.",
-              btnLabel: "Revoke",
-              fill: false,
-            },
-            {
-              title: "Delete Organization",
-              desc: "Permanently delete this organization and all associated data. Irreversible.",
-              btnLabel: "Delete",
-              fill: true,
-            },
+            { title: "Reset All Settings", desc: "Revert all configuration to factory defaults. This cannot be undone.", btnLabel: "Reset", fill: false },
+            { title: "Revoke All API Keys", desc: "Immediately invalidate all active API tokens. All integrations will break.", btnLabel: "Revoke", fill: false },
+            { title: "Delete Organization", desc: "Permanently delete this organization and all associated data. Irreversible.", btnLabel: "Delete", fill: true },
           ].map((item) => (
             <div
               key={item.title}
-              style={{
-                background: "var(--red-dim)",
-                border: "1px solid var(--red)",
-                borderRadius: 10,
-                padding: "20px 24px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
+              className="bg-red-dim border border-red rounded-2xl p-6 flex justify-between items-center"
             >
               <div>
-                <div style={{ fontSize: 13, color: "var(--red)", fontWeight: 500 }}>{item.title}</div>
-                <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 4 }}>{item.desc}</div>
+                <div className="font-sans font-bold text-red">{item.title}</div>
+                <div className="text-sm text-ink-muted mt-2 font-sans">{item.desc}</div>
               </div>
               <button
-                style={{
-                  background: item.fill ? "var(--red)" : "transparent",
-                  border: `1px solid var(--red)`,
-                  color: item.fill ? "#fff" : "var(--red)",
-                  padding: "9px 20px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontFamily: "inherit",
-                  fontWeight: item.fill ? 500 : 400,
-                }}
+                className={`px-7 py-2.5 rounded-xl text-[10px] font-mono uppercase tracking-widest transition-all active:scale-95 ${
+                  item.fill
+                    ? "bg-red text-white hover:bg-red/90"
+                    : "border border-red text-red hover:bg-red/10"
+                }`}
               >
                 {item.btnLabel}
               </button>
@@ -395,73 +249,42 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'DM Mono', 'Courier New', monospace", color: "var(--ink)" }}>
-      <style>{`
-        .tab-btn {
-          background: transparent;
-          border: none;
-          color: var(--ink-muted);
-          padding: 12px 20px;
-          cursor: pointer;
-          font-size: 13px;
-          font-family: inherit;
-          border-bottom: 3px solid transparent;
-          transition: all 0.15s;
-          white-space: nowrap;
-        }
-        .tab-btn:hover { color: var(--ink-soft); }
-        .tab-btn.active {
-          color: var(--orange);
-          border-bottom-color: var(--orange);
-        }
-      `}</style>
-
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{
-          fontFamily: "'Syne', sans-serif",
-          fontSize: 28,
-          fontWeight: 800,
-          letterSpacing: "-0.5px",
-          margin: 0,
-          color: "var(--ink)"
-        }}>
+    <div className="text-ink">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">
           Settings
         </h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-          <div style={{ height: 2, width: 28, background: "var(--green)", borderRadius: 1 }} />
-          <p style={{ color: "var(--ink-muted)", fontSize: 13, margin: 0, fontWeight: 300 }}>
+        <div className="flex items-center gap-3 mt-2">
+          {/* Canonical v4 width shorthand */}
+          <div className="h-0.75 w-7 bg-green rounded-full" />
+          <p className="text-ink-muted text-sm font-sans font-light">
             Configure application preferences and system behavior
           </p>
         </div>
       </div>
 
-      <div style={{
-        background: "var(--grad-card)",
-        border: "1px solid var(--border)",
-        borderRadius: 12,
-        overflow: "hidden"
-      }}>
+      {/* Main Card */}
+      <div className="bg-grad-card border border-border rounded-2xl overflow-hidden shadow-sm">
         {/* Tab Bar */}
-        <div style={{
-          display: "flex",
-          borderBottom: "1px solid var(--border)",
-          padding: "0 8px",
-          overflowX: "auto",
-          background: "var(--surface2)"
-        }}>
+        <div className="flex border-b border-border bg-surface2 overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab}
-              className={`tab-btn ${activeTab === tab ? "active" : ""}`}
               onClick={() => setActiveTab(tab)}
+              className={`px-8 py-4 text-xs font-mono uppercase tracking-widest border-b-2 transition-all ${
+                activeTab === tab
+                  ? "text-orange border-orange"
+                  : "text-ink-muted border-transparent hover:text-ink-soft"
+              }`}
             >
               {tab}
             </button>
           ))}
         </div>
 
-        {/* Tab Content Area */}
-        <div style={{ padding: 28 }}>
+        {/* Tab Content */}
+        <div className="p-8">
           <TabContent tab={activeTab} />
         </div>
       </div>

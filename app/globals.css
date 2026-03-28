@@ -1,224 +1,157 @@
 /* ── Navkon Brand Fonts ──────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Serif+Display&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&family=Syne:wght@700;800&display=swap');
 
-/* Tailwind v4 base import - MUST come after all @import url() statements */
+/* Tailwind v4 base import */
 @import "tailwindcss";
 
+/* ── Tailwind Theme Bridge ──────────────────────────────────────────────── */
+@theme inline {
+  /* Core Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  
+  /* Brand Specifics */
+  --color-orange: var(--orange);
+  --color-orange-mid: var(--orange-mid);
+  --color-orange-dim: var(--orange-dim);
+  --color-orange-border: var(--orange-border);
+
+  --color-green: var(--green);
+  --color-green-mid: var(--green-mid);
+  --color-green-dim: var(--green-dim);
+  --color-green-border: var(--green-border);
+  --color-deep-green: var(--deep-green);
+
+  --color-border: var(--border);
+  --color-border2: var(--border2);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-ghost: var(--ink-ghost);
+
+  --color-red: var(--red);
+  --color-red-dim: var(--red-dim);
+  --color-amber: var(--amber);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+
+  /* Typography */
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+  --font-serif: 'DM Serif Display', serif;
+  --font-syne: 'Syne', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
+}
+
 /* ── Base Reset ──────────────────────────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
 
-body {
-  margin: 0;
-  font-family: 'DM Mono', 'Courier New', monospace;
-  background: var(--background);
-  color: var(--foreground);
-  transition: background 0.3s, color 0.3s;
-}
+  body {
+    margin: 0;
+    font-family: var(--font-mono);
+    background: var(--background);
+    color: var(--foreground);
+    transition: background 0.3s, color 0.3s;
+    min-height: 100vh;
+  }
 
-/* ── Grain Overlay (Navkon tactile aesthetic) ────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-  opacity: var(--grain-opacity, 0.03);
+  /* ── Grain Overlay (Navkon tactile aesthetic) ────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: var(--grain-opacity, 0.04);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   LIGHT MODE (Default)
-   Navkon "Warm Paper" — professional with organic warmth
+   THEME VARIABLES
    ══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Existing surface / layout vars (kept for Tailwind compat) */
   --background: #faf8f5;
   --surface:    #ffffff;
   --foreground: #0F172A;
-  --primary:    #F97316;        /* Navkon Royal Orange */
-  --accent:     #10B981;        /* Navkon Emerald Green */
+  --primary:    #F97316;
+  --accent:     #10B981;
   --muted:      #64748b;
-
-  /* ── Navkon Extended Palette ── */
-  --orange:        #F97316;
-  --orange-mid:    #ea6a0a;
-  --orange-dim:    #FFEDD5;
+  --orange:     #F97316;
+  --orange-mid: #ea6a0a;
+  --orange-dim: #FFEDD5;
   --orange-border: #F9731650;
-
-  --green:         #10B981;
-  --green-mid:     #059669;
-  --green-dim:     #D1FAE5;
-  --green-border:  #10B98150;
-  --deep-green:    #047857;
-
-  /* Surfaces */
+  --green:      #10B981;
+  --green-mid:  #059669;
+  --green-dim:  #D1FAE5;
+  --green-border: #10B98150;
+  --deep-green: #047857;
   --surface2:   #f2ede6;
   --border:     #e4ddd5;
   --border2:    #cbd5e1;
-
-  /* Typography scale */
   --ink:        #0F172A;
   --ink-soft:   #475569;
   --ink-muted:  #64748b;
   --ink-dim:    #94A3B4;
   --ink-ghost:  #b0aaa4;
-
-  /* Status */
   --red:        #b84040;
   --red-dim:    #fee2e2;
   --amber:      #c47a2a;
   --blue:       #2563eb;
   --purple:     #7c3aed;
-
-  /* Gradient card surface */
   --grad-card:  linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-
-  /* Grain opacity for light mode */
   --grain-opacity: 0.04;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   DARK MODE  —  .theme-dark  (applied to <html> by ThemeProvider)
-   Navkon "Deep Console" — dark navy with orange/green brand accents
-   ══════════════════════════════════════════════════════════════════════════ */
 .theme-dark {
-  /* Core Tailwind-compat vars */
   --background: #0a0e18;
   --surface:    #141824;
   --foreground: #e2e8f0;
   --primary:    #F97316;
   --accent:     #10B981;
   --muted:      #94a3b8;
-
-  /* Extended palette */
-  --orange:        #F97316;
-  --orange-mid:    #fb923c;
-  --orange-dim:    #F9731620;
+  --orange:     #F97316;
+  --orange-mid: #fb923c;
+  --orange-dim: #F9731620;
   --orange-border: #F9731640;
-
-  --green:         #10B981;
-  --green-mid:     #34d399;
-  --green-dim:     #10B98115;
-  --green-border:  #10B98135;
-  --deep-green:    #047857;
-
-  --surface2:  #1a1f2e;
-  --border:    #2a3040;
-  --border2:   #1e2433;
-
-  --ink:       #e2e8f0;
-  --ink-soft:  #94a3b8;
-  --ink-muted: #64748b;
-  --ink-dim:   #475569;
-  --ink-ghost: #334155;
-
-  --red:       #f87171;
-  --red-dim:   #f8717115;
-  --amber:     #f5a000;
-  --blue:      #00b4f5;
-  --purple:    #c084fc;
-
-  --grad-card: linear-gradient(135deg, #1a1f2e 0%, #141824 100%);
-
+  --green:      #10B981;
+  --green-mid:  #34d399;
+  --green-dim:  #10B98115;
+  --green-border: #10B98135;
+  --deep-green: #047857;
+  --surface2:   #1a1f2e;
+  --border:     #2a3040;
+  --border2:    #1e2433;
+  --ink:        #e2e8f0;
+  --ink-soft:   #94a3b8;
+  --ink-muted:  #64748b;
+  --ink-dim:    #475569;
+  --ink-ghost:  #334155;
+  --red:        #f87171;
+  --red-dim:    #f8717115;
+  --amber:      #f5a000;
+  --blue:       #00b4f5;
+  --purple:     #c084fc;
+  --grad-card:  linear-gradient(135deg, #1a1f2e 0%, #141824 100%);
   --grain-opacity: 0.025;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   NAVKON BLUE THEME  —  .theme-navkon
-   ══════════════════════════════════════════════════════════════════════════ */
-.theme-navkon {
-  --background: #eef2ff;
-  --surface:    #ffffff;
-  --primary:    #1e3a8a;
-  --accent:     #2563eb;
-  --foreground: #1e293b;
-  --muted:      #64748b;
-
-  --orange:        #F97316;
-  --orange-dim:    #FFEDD5;
-  --orange-border: #F9731640;
-  --green:         #10B981;
-  --green-dim:     #D1FAE5;
-  --green-border:  #10B98140;
-  --deep-green:    #047857;
-
-  --surface2:  #e0e7ff;
-  --border:    #c7d2fe;
-  --border2:   #dde4f5;
-  --ink:       #1e3a8a;
-  --ink-soft:  #3b52a5;
-  --ink-muted: #64748b;
-  --ink-dim:   #94a3b8;
-  --ink-ghost: #b0aaa4;
-
-  --red:       #b84040;
-  --red-dim:   #fee2e2;
-  --amber:     #c47a2a;
-  --blue:      #2563eb;
-  --purple:    #7c3aed;
-
-  --grad-card: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
-  --grain-opacity: 0.035;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   EMERALD THEME  —  .theme-emerald
-   ══════════════════════════════════════════════════════════════════════════ */
-.theme-emerald {
-  --background: #ecfdf5;
-  --surface:    #ffffff;
-  --primary:    #065f46;
-  --accent:     #10b981;
-  --foreground: #064e3b;
-  --muted:      #6b7280;
-
-  --orange:        #F97316;
-  --orange-dim:    #FFEDD5;
-  --orange-border: #F9731640;
-  --green:         #10B981;
-  --green-mid:     #059669;
-  --green-dim:     #D1FAE5;
-  --green-border:  #10B98150;
-  --deep-green:    #047857;
-
-  --surface2:  #d1fae5;
-  --border:    #a7f3d0;
-  --border2:   #bbf7d0;
-  --ink:       #064e3b;
-  --ink-soft:  #065f46;
-  --ink-muted: #6b7280;
-  --ink-dim:   #9ca3af;
-  --ink-ghost: #b0aaa4;
-
-  --red:       #b84040;
-  --red-dim:   #fee2e2;
-  --amber:     #c47a2a;
-  --blue:      #2563eb;
-  --purple:    #7c3aed;
-
-  --grad-card: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
-  --grain-opacity: 0.035;
-}
-
-/* ── Tailwind inline theme bridge ────────────────────────────────────────── */
-@theme inline {
-  --color-background: var(--background);
-  --color-surface:    var(--surface);
-  --color-primary:    var(--primary);
-  --color-accent:     var(--accent);
-  --color-foreground: var(--foreground);
-  --color-muted:      var(--muted);
-}
-
-/* ── Scrollbar styling ───────────────────────────────────────────────────── */
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface2); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-dim); }
 
-/* ── Selection color ─────────────────────────────────────────────────────── */
+/* ── Selection ──────────────────────────────────────────────────────────── */
 ::selection {
   background: var(--orange-dim);
   color: var(--orange);

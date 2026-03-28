@@ -15,31 +15,37 @@ export default function Sidebar() {
   ];
 
   const isActive = (path: string) => {
-    if (path === "/dashboard") {
-      return pathname === "/dashboard";
-    }
+    if (path === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(path);
   };
 
   return (
-    <aside className="w-64 bg-primary text-surface p-6 flex flex-col">
-      <h2 className="text-xl font-bold mb-10">Navkon Admin</h2>
+    <aside className="w-64 bg-surface border-r border-border flex flex-col min-h-screen">
+      <div className="p-6">
+        {/* Brand Header with Canonical Rule of Three */}
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-0.75 h-6 bg-orange rounded-full" /> 
+          <span className="font-serif text-2xl font-medium tracking-tight text-ink">
+            Navkon
+          </span>
+        </div>
 
-      <nav className="flex flex-col gap-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            href={item.path}
-            className={`px-4 py-2 rounded transition-all duration-200 ${
-              isActive(item.path)
-                ? "bg-accent text-white"
-                : "hover:bg-surface/10"
-            }`}
-          >
-            {item.name}
-          </Link>
-        ))}
-      </nav>
+        <nav className="flex flex-col gap-1.5">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`px-4 py-2.5 rounded-xl text-sm font-sans font-medium transition-all duration-200 border border-transparent ${
+                isActive(item.path)
+                  ? "bg-orange text-white shadow-lg shadow-orange/15"
+                  : "text-ink-muted hover:bg-surface2 hover:text-ink hover:border-border"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </aside>
   );
 }

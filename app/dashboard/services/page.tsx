@@ -45,7 +45,6 @@ export default function ServicesPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
 
-  // Form state for new service
   const [newService, setNewService] = useState({
     name: "",
     desc: "",
@@ -73,7 +72,6 @@ export default function ServicesPage() {
 
   const handleDeployService = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!newService.name || !newService.desc) return;
 
     const service: Service = {
@@ -97,154 +95,62 @@ export default function ServicesPage() {
   const stoppedCount = serviceList.filter((s) => s.status === "Stopped").length;
 
   return (
-    <div style={{ fontFamily: "'DM Mono', 'Courier New', monospace", color: "var(--ink)" }}>
-      <style>{`
-        .svc-card {
-          background: var(--grad-card);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 20px;
-          transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-          cursor: default;
-        }
-        .svc-card:hover {
-          border-color: var(--orange-border);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px var(--orange-dim);
-        }
-
-        .filter-btn {
-          background: transparent;
-          border: 1px solid var(--border);
-          color: var(--ink-muted);
-          padding: 6px 14px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 12px;
-          font-family: inherit;
-          transition: all 0.15s;
-        }
-        .filter-btn:hover { border-color: var(--orange-border); color: var(--orange); }
-        .filter-btn.active {
-          background: var(--orange-dim);
-          border-color: var(--orange);
-          color: var(--orange);
-        }
-
-        .view-btn {
-          background: transparent;
-          border: 1px solid var(--border);
-          color: var(--ink-dim);
-          padding: 6px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 13px;
-          font-family: inherit;
-          transition: all 0.15s;
-        }
-        .view-btn.active {
-          background: var(--surface2);
-          color: var(--ink);
-          border-color: var(--orange-border);
-        }
-
-        .svc-action {
-          background: transparent;
-          border: 1px solid var(--border);
-          color: var(--ink-muted);
-          padding: 5px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 11px;
-          font-family: inherit;
-          transition: all 0.15s;
-        }
-        .svc-action:hover { border-color: var(--orange-border); color: var(--orange); }
-
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-        .pulse { animation: pulse 2s infinite; }
-
-        .svc-row { transition: background 0.15s; }
-        .svc-row:hover { background: var(--surface2) !important; }
-
-        .modal {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.6);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10000;
-        }
-        .modal-content {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          width: 100%;
-          max-width: 480px;
-          padding: 28px;
-        }
-      `}</style>
-
+    <div className="font-mono text-ink">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
+      <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 style={{ 
-            fontFamily: "'Syne', sans-serif", 
-            fontSize: 28, 
-            fontWeight: 800, 
-            letterSpacing: "-0.5px", 
-            margin: 0, 
-            color: "var(--ink)" 
-          }}>
+          <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">
             Services
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <div style={{ height: 2, width: 28, background: "var(--green)", borderRadius: 1 }} />
-            <p style={{ color: "var(--ink-muted)", fontSize: 13, margin: 0, fontWeight: 300 }}>
+          <div className="flex items-center gap-3 mt-2">
+            <div className="h-0.5 w-7 bg-green rounded" />
+            <p className="text-ink-muted text-sm font-light">
               {runningCount} running · {degradedCount} degraded · {stoppedCount} stopped
             </p>
           </div>
         </div>
-        <button 
+        <button
           onClick={() => setIsDeployModalOpen(true)}
-          style={{
-            background: "var(--orange)", 
-            border: "none", 
-            color: "#fff",
-            padding: "8px 20px", 
-            borderRadius: 6, 
-            cursor: "pointer",
-            fontSize: 12, 
-            fontFamily: "inherit", 
-            fontWeight: 500,
-          }}
+          className="bg-orange hover:bg-orange/90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
         >
           + Deploy Service
         </button>
       </div>
 
       {/* Filters & View Toggle */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 20 }}>
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
         {types.map((t) => (
-          <button 
-            key={t} 
-            className={`filter-btn ${typeFilter === t ? "active" : ""}`} 
+          <button
+            key={t}
             onClick={() => setTypeFilter(t)}
+            className={`px-5 py-2 text-sm font-medium rounded-xl border transition-all ${
+              typeFilter === t
+                ? "bg-orange-dim border-orange text-orange"
+                : "bg-transparent border-border text-ink-muted hover:border-orange-border hover:text-orange"
+            }`}
           >
             {t}
           </button>
         ))}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          <button 
-            className={`view-btn ${view === "grid" ? "active" : ""}`} 
+
+        <div className="ml-auto flex gap-2">
+          <button
             onClick={() => setView("grid")}
+            className={`px-4 py-2 border rounded-xl text-lg transition-all ${
+              view === "grid"
+                ? "bg-surface2 border-orange text-ink"
+                : "border-border text-ink-dim hover:border-orange-border"
+            }`}
           >
             ⊞
           </button>
-          <button 
-            className={`view-btn ${view === "list" ? "active" : ""}`} 
+          <button
             onClick={() => setView("list")}
+            className={`px-4 py-2 border rounded-xl text-lg transition-all ${
+              view === "list"
+                ? "bg-surface2 border-orange text-ink"
+                : "border-border text-ink-dim hover:border-orange-border"
+            }`}
           >
             ☰
           </button>
@@ -253,89 +159,79 @@ export default function ServicesPage() {
 
       {/* Grid View */}
       {view === "grid" ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((svc) => {
             const ss = statusStyle[svc.status];
             return (
-              <div key={svc.id} className="svc-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <div
+                key={svc.id}
+                className="bg-grad-card border border-border rounded-2xl p-6 hover:border-orange hover:-translate-y-1 hover:shadow-2xl transition-all duration-200"
+              >
+                <div className="flex justify-between items-start mb-5">
+                  <div className="flex items-center gap-3">
                     <div
-                      className={svc.status === "Running" ? "pulse" : ""}
-                      style={{ 
-                        width: 8, 
-                        height: 8, 
-                        borderRadius: "50%", 
-                        background: ss.pulse, 
-                        flexShrink: 0 
-                      }}
+                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${svc.status === "Running" ? "pulse" : ""}`}
+                      style={{ background: ss.pulse }}
                     />
                     <div>
-                      <div style={{ fontSize: 14, color: "var(--ink)", fontWeight: 500 }}>{svc.name}</div>
-                      <div style={{ fontSize: 10, color: "var(--ink-muted)", marginTop: 2 }}>{svc.id}</div>
+                      <div className="font-medium text-ink">{svc.name}</div>
+                      <div className="text-xs text-ink-muted font-mono">{svc.id}</div>
                     </div>
                   </div>
-                  <span style={{
-                    fontSize: 10,
-                    color: typeColorMap[svc.type],
-                    background: typeDimMap[svc.type],
-                    padding: "2px 8px", 
-                    borderRadius: 20,
-                    border: `1px solid ${typeBorderMap[svc.type]}`,
-                  }}>
+                  <span
+                    className="text-xs px-3 py-1 rounded-full border font-medium"
+                    style={{
+                      color: typeColorMap[svc.type],
+                      background: typeDimMap[svc.type],
+                      border: `1px solid ${typeBorderMap[svc.type]}`,
+                    }}
+                  >
                     {svc.type}
                   </span>
                 </div>
 
-                <p style={{ fontSize: 11, color: "var(--ink-muted)", margin: "0 0 16px", lineHeight: 1.6 }}>
+                <p className="text-sm text-ink-muted leading-relaxed mb-6 line-clamp-2">
                   {svc.desc}
                 </p>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
                     ["Uptime", svc.uptime],
                     ["Requests", svc.requests],
                     ["Region", svc.region],
-                    ["Status", svc.status]
-                  ].map(([k, v]) => (
-                    <div 
-                      key={k} 
-                      style={{ 
-                        background: "var(--surface2)", 
-                        borderRadius: 6, 
-                        padding: "8px 10px", 
-                        border: "1px solid var(--border)" 
-                      }}
+                    ["Status", svc.status],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="bg-surface2 border border-border rounded-xl p-3"
                     >
-                      <div style={{ 
-                        fontSize: 9, 
-                        color: "var(--ink-ghost)", 
-                        textTransform: "uppercase", 
-                        letterSpacing: "0.8px" 
-                      }}>
-                        {k}
+                      <div className="text-[10px] uppercase tracking-widest text-ink-ghost">
+                        {label}
                       </div>
-                      <div style={{ 
-                        fontSize: 12, 
-                        color: k === "Status" ? ss.text : "var(--ink-soft)", 
-                        marginTop: 2 
-                      }}>
-                        {v}
+                      <div
+                        className="mt-1 text-sm font-medium"
+                        style={{ color: label === "Status" ? ss.text : "var(--ink-soft)" }}
+                      >
+                        {value}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button className="svc-action">Logs</button>
-                  <button className="svc-action" onClick={() => restartService(svc.id)}>
+                <div className="flex gap-2">
+                  <button className="flex-1 py-2 text-xs border border-border hover:border-orange-border hover:text-orange rounded-xl transition-all">
+                    Logs
+                  </button>
+                  <button
+                    onClick={() => restartService(svc.id)}
+                    className="flex-1 py-2 text-xs border border-border hover:border-orange-border hover:text-orange rounded-xl transition-all"
+                  >
                     Restart
                   </button>
                   {svc.status === "Stopped" && (
                     <button
-                      className="svc-action"
-                      style={{ color: "var(--green)", borderColor: "var(--green-border)" }}
                       onClick={() => startService(svc.id)}
+                      className="flex-1 py-2 text-xs border border-green-border text-green hover:bg-green-dim rounded-xl transition-all"
                     >
                       Start
                     </button>
@@ -347,28 +243,14 @@ export default function ServicesPage() {
         </div>
       ) : (
         /* List View */
-        <div style={{ 
-          background: "var(--grad-card)", 
-          border: "1px solid var(--border)", 
-          borderRadius: 12, 
-          overflow: "hidden" 
-        }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="bg-grad-card border border-border rounded-2xl overflow-hidden">
+          <table className="w-full">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+              <tr className="border-b border-border bg-surface2">
                 {["Status", "Service", "Type", "Uptime", "Requests", "Region", "Actions"].map((h, i) => (
-                  <th 
-                    key={i} 
-                    style={{
-                      padding: "12px 16px", 
-                      textAlign: "left", 
-                      fontSize: 10,
-                      color: "var(--ink-dim)", 
-                      textTransform: "uppercase",
-                      letterSpacing: "1px", 
-                      fontWeight: 400, 
-                      background: "var(--surface2)",
-                    }}
+                  <th
+                    key={i}
+                    className="px-6 py-4 text-left text-xs uppercase tracking-widest font-normal text-ink-dim"
                   >
                     {h}
                   </th>
@@ -379,58 +261,50 @@ export default function ServicesPage() {
               {filtered.map((svc, i) => {
                 const ss = statusStyle[svc.status];
                 return (
-                  <tr 
-                    key={svc.id} 
-                    className="svc-row" 
-                    style={{ borderBottom: i < filtered.length - 1 ? "1px solid var(--border2)" : "none" }}
+                  <tr
+                    key={svc.id}
+                    className="border-b border-border2 last:border-none hover:bg-surface2 transition-colors"
                   >
-                    <td style={{ padding: "14px 16px" }}>
-                      <div 
-                        className={svc.status === "Running" ? "pulse" : ""} 
-                        style={{ 
-                          width: 8, 
-                          height: 8, 
-                          borderRadius: "50%", 
-                          background: ss.pulse 
-                        }} 
+                    <td className="px-6 py-5">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${svc.status === "Running" ? "pulse" : ""}`}
+                        style={{ background: ss.pulse }}
                       />
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ fontSize: 13, color: "var(--ink)" }}>{svc.name}</div>
-                      <div style={{ fontSize: 10, color: "var(--ink-ghost)" }}>{svc.desc}</div>
+                    <td className="px-6 py-5">
+                      <div className="font-medium text-ink">{svc.name}</div>
+                      <div className="text-xs text-ink-ghost mt-1 line-clamp-1">{svc.desc}</div>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <span style={{
-                        fontSize: 11,
-                        color: typeColorMap[svc.type],
-                        background: typeDimMap[svc.type],
-                        padding: "2px 8px", 
-                        borderRadius: 20,
-                        border: `1px solid ${typeBorderMap[svc.type]}`,
-                      }}>
+                    <td className="px-6 py-5">
+                      <span
+                        className="text-xs px-3 py-1 rounded-full border font-medium"
+                        style={{
+                          color: typeColorMap[svc.type],
+                          background: typeDimMap[svc.type],
+                          border: `1px solid ${typeBorderMap[svc.type]}`,
+                        }}
+                      >
                         {svc.type}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--ink-soft)" }}>
-                      {svc.uptime}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--ink-soft)" }}>
-                      {svc.requests}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--ink-muted)" }}>
-                      {svc.region}
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button className="svc-action">Logs</button>
-                        <button className="svc-action" onClick={() => restartService(svc.id)}>
+                    <td className="px-6 py-5 text-sm text-ink-soft">{svc.uptime}</td>
+                    <td className="px-6 py-5 text-sm text-ink-soft">{svc.requests}</td>
+                    <td className="px-6 py-5 text-sm text-ink-muted">{svc.region}</td>
+                    <td className="px-6 py-5">
+                      <div className="flex gap-2">
+                        <button className="px-4 py-1.5 text-xs border border-border hover:border-orange-border hover:text-orange rounded-lg transition-all">
+                          Logs
+                        </button>
+                        <button
+                          onClick={() => restartService(svc.id)}
+                          className="px-4 py-1.5 text-xs border border-border hover:border-orange-border hover:text-orange rounded-lg transition-all"
+                        >
                           Restart
                         </button>
                         {svc.status === "Stopped" && (
                           <button
-                            className="svc-action"
-                            style={{ color: "var(--green)", borderColor: "var(--green-border)" }}
                             onClick={() => startService(svc.id)}
+                            className="px-4 py-1.5 text-xs border border-green-border text-green hover:bg-green-dim rounded-lg transition-all"
                           >
                             Start
                           </button>
@@ -447,33 +321,21 @@ export default function ServicesPage() {
 
       {/* Empty State */}
       {filtered.length === 0 && serviceList.length === 0 && (
-        <div style={{ 
-          padding: 80, 
-          textAlign: "center", 
-          color: "var(--ink-ghost)", 
-          fontSize: 13 
-        }}>
+        <div className="py-20 text-center text-ink-ghost">
           No services deployed yet.<br />
           Click "+ Deploy Service" to get started.
         </div>
       )}
 
-      {/* Deploy New Service Modal */}
+      {/* Deploy Modal */}
       {isDeployModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2 style={{ 
-              margin: "0 0 24px 0", 
-              fontFamily: "'Syne', sans-serif", 
-              fontSize: 22, 
-              fontWeight: 700 
-            }}>
-              Deploy New Service
-            </h2>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg p-8">
+            <h2 className="font-serif text-2xl font-bold mb-6 text-ink">Deploy New Service</h2>
 
-            <form onSubmit={handleDeployService}>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", marginBottom: 6, fontSize: 12, color: "var(--ink-muted)" }}>
+            <form onSubmit={handleDeployService} className="space-y-6">
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
                   Service Name
                 </label>
                 <input
@@ -481,59 +343,34 @@ export default function ServicesPage() {
                   required
                   value={newService.name}
                   onChange={(e) => setNewService({ ...newService, name: e.target.value })}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    background: "var(--surface)",
-                    color: "var(--ink)",
-                    fontSize: 14,
-                  }}
+                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
                   placeholder="User Analytics Service"
                 />
               </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", marginBottom: 6, fontSize: 12, color: "var(--ink-muted)" }}>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
                   Description
                 </label>
                 <textarea
                   required
                   value={newService.desc}
                   onChange={(e) => setNewService({ ...newService, desc: e.target.value })}
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    background: "var(--surface)",
-                    color: "var(--ink)",
-                    fontSize: 14,
-                    resize: "vertical",
-                  }}
+                  rows={4}
+                  className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none resize-y"
                   placeholder="Handles real-time user behavior tracking and aggregation..."
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: "block", marginBottom: 6, fontSize: 12, color: "var(--ink-muted)" }}>
+                  <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
                     Type
                   </label>
                   <select
                     value={newService.type}
                     onChange={(e) => setNewService({ ...newService, type: e.target.value as any })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      background: "var(--surface)",
-                      color: "var(--ink)",
-                      fontSize: 14,
-                    }}
+                    className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
                   >
                     <option value="Core">Core</option>
                     <option value="Worker">Worker</option>
@@ -542,21 +379,13 @@ export default function ServicesPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", marginBottom: 6, fontSize: 12, color: "var(--ink-muted)" }}>
+                  <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">
                     Region
                   </label>
                   <select
                     value={newService.region}
                     onChange={(e) => setNewService({ ...newService, region: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      background: "var(--surface)",
-                      color: "var(--ink)",
-                      fontSize: 14,
-                    }}
+                    className="w-full bg-surface2 border border-border rounded-xl px-4 py-3 text-sm focus:border-orange outline-none"
                   >
                     <option value="us-east-1">us-east-1</option>
                     <option value="us-west-2">us-west-2</option>
@@ -567,34 +396,17 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <div className="flex gap-3 justify-end pt-4">
                 <button
                   type="button"
                   onClick={() => setIsDeployModalOpen(false)}
-                  style={{
-                    background: "var(--surface2)",
-                    border: "1px solid var(--border)",
-                    color: "var(--ink-soft)",
-                    padding: "10px 20px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 13,
-                  }}
+                  className="px-6 py-2.5 border border-border bg-surface2 hover:bg-surface rounded-xl text-sm transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{
-                    background: "var(--orange)",
-                    border: "none",
-                    color: "#fff",
-                    padding: "10px 28px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 500,
-                  }}
+                  className="px-8 py-2.5 bg-orange hover:bg-orange/90 text-white rounded-xl text-sm font-medium transition-all"
                 >
                   Deploy Service
                 </button>

@@ -1,116 +1,80 @@
 "use client";
 
-// components/providers/AppProviders.tsx
-//
-// This is the single source of truth for theming.
-// It reads localStorage on mount, applies the theme class to <html>,
-// and provides ThemeContext to the entire app tree.
-//
-// All other components (Topbar, Settings, etc.) consume useTheme() from here.
-
 import {
   createContext,
   useContext,
   useEffect,
   useState,
   useCallback,
+  ReactNode,
 } from "react";
 
-// ── Theme types ───────────────────────────────────────────────────────────
 export type ThemeName = "light" | "dark" | "navkon" | "emerald";
 
 const THEME_CLASS_MAP: Record<ThemeName, string> = {
-  light:   "",            // default :root — no extra class
-  dark:    "theme-dark",
-  navkon:  "theme-navkon",
+  light: "",
+  dark: "theme-dark",
+  navkon: "theme-navkon",
   emerald: "theme-emerald",
 };
 
 const STORAGE_KEY = "navkon_theme";
 
-// ── Context ───────────────────────────────────────────────────────────────
-interface ThemeCtx {
+interface ThemeContextType {
   theme: ThemeName;
-  dark: boolean;           // convenience boolean (true when theme === "dark")
-  toggleTheme: () => void; // cycles light ↔ dark
-  setTheme: (t: ThemeName) => void;
+  dark: boolean;
+  toggleTheme: () => void;
+  setTheme: (theme: ThemeName) => void;
 }
 
-export const ThemeContext = createContext<ThemeCtx>({
-  theme: "dark",
-  dark: true,
-  toggleTheme: () => {},
-  setTheme: () => {},
-});
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function useTheme() {
-  return useContext(ThemeContext);
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within AppProviders");
+  }
+  return context;
 }
 
-// ── Helper: apply class to <html> ─────────────────────────────────────────
-function applyThemeClass(theme: ThemeName) {
+function applyTheme(theme: ThemeName) {
   const html = document.documentElement;
-  // Remove all existing theme classes
+  // Remove all theme classes
   Object.values(THEME_CLASS_MAP).forEach((cls) => {
     if (cls) html.classList.remove(cls);
   });
-  // Apply the new one (if any)
-  const cls = THEME_CLASS_MAP[theme];
-  if (cls) html.classList.add(cls);
+  // Add new one
+  const className = THEME_CLASS_MAP[theme];
+  if (className) html.classList.add(className);
 }
 
-// ── Provider ──────────────────────────────────────────────────────────────
-export default function AppProviders({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // Default to "dark" until localStorage is read on the client
+export default function AppProviders({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeName>("dark");
   const [mounted, setMounted] = useState(false);
 
-  // Read persisted theme on first mount
+  // Load saved theme
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as ThemeName | null;
-    const initial: ThemeName =
-      saved && saved in THEME_CLASS_MAP ? saved : "dark";
-    setThemeState(initial);
-    applyThemeClass(initial);
+    const initialTheme: ThemeName = saved && saved in THEME_CLASS_MAP ? saved : "dark";
+
+    setThemeState(initialTheme);
+    applyTheme(initialTheme);
     setMounted(true);
   }, []);
 
-  const setTheme = useCallback((next: ThemeName) => {
-    setThemeState(next);
-    applyThemeClass(next);
-    localStorage.setItem(STORAGE_KEY, next);
+  const setTheme = useCallback((newTheme: ThemeName) => {
+    setThemeState(newTheme);
+    applyTheme(newTheme);
+    localStorage.setItem(STORAGE_KEY, newTheme);
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => {
-      const next: ThemeName = prev === "dark" ? "light" : "dark";
-      applyThemeClass(next);
-      localStorage.setItem(STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
-
-  // Avoid flash of wrong theme during SSR hydration
-  // Children still render (for SEO / streaming), but theme class is applied
-  // synchronously on the client before paint via the useEffect above.
+    setTheme(theme === "dark" ? "light" : "dark");
+  }, [theme]);
 
   return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        dark: theme === "dark",
-        toggleTheme,
-        setTheme,
-      }}
-    >
-      {/*
-        Suppress the very brief unstyled flash on first load.
-        Once mounted, the correct theme class is on <html>.
-      */}
+    <ThemeContext.Provider value={{ theme, dark: theme === "dark", toggleTheme, setTheme }}>
+      {/* Prevent hydration mismatch flash */}
       <div style={{ visibility: mounted ? "visible" : "hidden" }}>
         {children}
       </div>
