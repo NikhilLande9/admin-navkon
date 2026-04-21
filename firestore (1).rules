@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email == "nikhillande9@gmail.com";
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // ── Public website leads ───────────────────────────────────────────────
+    match /leads/{doc} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
+    // ── Users collection ───────────────────────────────────────────────────
+    // Any signed-in user can read their own doc.
+    // Admin can read/write all user docs.
+    // Regular users can read others (needed for the roles page admin list),
+    // but only Admin can change roles.
+    match /users/{uid} {
+      allow read: if isSignedIn();
+
+      // Users can update their own non-role fields (e.g. displayName)
+      allow update: if isSignedIn() && request.auth.uid == uid
+        && !("role" in request.resource.data)
+        && !("email" in request.resource.data);
+
+      // Only admin can create/delete user docs or change roles
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    // ── Role permissions config ────────────────────────────────────────────
+    // Anyone signed in can read (needed to filter sidebar nav).
+    // Only admin can write.
+    match /config/rolePermissions {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Everything else in config ──────────────────────────────────────────
+    match /config/{doc} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── All other collections ──────────────────────────────────────────────
+    // Signed-in users can read/write (adjust per collection as needed)
+    match /{document=**} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}
