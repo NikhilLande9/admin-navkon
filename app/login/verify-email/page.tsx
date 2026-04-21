@@ -1,101 +1,122 @@
-//app\login\register\page.tsx
+//app\login\verify-email\page.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { sendEmailVerification } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
-export default function RegisterPage() {
+function VerifyEmailContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get("email") || "";
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState("");
   const [isDark, setIsDark] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(60);
+  const [error, setError] = useState("");
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("navkon_theme");
     setIsDark(savedTheme !== "light");
+    setMounted(true);
+  }, []);
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user && user.emailVerified) {
-        router.push("/dashboard");
-      } else {
-        setMounted(true);
+  // Countdown for resend button
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const t = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [resendCountdown]);
+
+  // Poll for email verification every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const user = auth.currentUser;
+      if (user) {
+        await user.reload();
+        if (user.emailVerified) {
+          // Update Firestore — doc is keyed by lowercased email, not UID
+          const emailKey = user.email?.toLowerCase() ?? "";
+          if (emailKey) {
+            await updateDoc(doc(db, "users", emailKey), { emailVerified: true });
+          }
+          clearInterval(interval);
+          router.push("/dashboard");
+        }
       }
-    });
+    }, 5000);
 
-    return () => unsubscribe();
+    return () => clearInterval(interval);
   }, [router]);
 
-  const validatePassword = (pw: string) => {
-    if (pw.length < 8) return "Password must be at least 8 characters.";
-    if (!/[A-Z]/.test(pw)) return "Password must include at least one uppercase letter.";
-    if (!/[0-9]/.test(pw)) return "Password must include at least one number.";
-    return null;
-  };
-
-  const handleRegister = async () => {
+  const handleCheckVerification = async () => {
     setError("");
-
-    if (!name.trim()) return setError("Please enter your name.");
-    if (!email.trim()) return setError("Please enter your email.");
-
-    const pwError = validatePassword(password);
-    if (pwError) return setError(pwError);
-
-    if (password !== confirm) return setError("Passwords do not match.");
-
-    setIsLoading(true);
+    setIsChecking(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      const user = userCredential.user;
+      const user = auth.currentUser;
+      if (user) {
+        await user.reload();
+        if (user.emailVerified) {
+          // Update Firestore — doc is keyed by lowercased email, not UID
+          const emailKey = user.email?.toLowerCase() ?? "";
+          if (emailKey) {
+            await updateDoc(doc(db, "users", emailKey), { emailVerified: true });
+          }
+          router.push("/dashboard");
+        } else {
+          setError("Email not verified yet. Please check your inbox and click the link.");
+        }
+      } else {
+        // Session expired — redirect to login
+        router.push("/login");
+      }
+    } catch {
+      setError("Failed to check verification status.");
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
-      // Set display name
-      await updateProfile(user, { displayName: name.trim() });
+  const handleResend = async () => {
+    if (resendCountdown > 0) return;
+    setError("");
+    setIsResending(true);
+    setResendSuccess(false);
 
-      // Save user profile to Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        role: "admin",
-        createdAt: serverTimestamp(),
-        emailVerified: false,
-      });
-
-      // Send email verification
-      await sendEmailVerification(user, {
-        url: "http://localhost:3000/login",
-        handleCodeInApp: false,
-        });
-
-      // NOTE: Do NOT sign out here.
-      // We keep the user signed in so verify-email page can call
-      // user.reload() and resend the verification email via auth.currentUser.
-      // The user is effectively blocked from the dashboard until emailVerified === true.
-
-      router.push("/login/verify-email?email=" + encodeURIComponent(email.trim()));
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await sendEmailVerification(user);
+        setResendCountdown(60);
+        setResendSuccess(true);
+      } else {
+        router.push("/login");
+      }
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code;
-      if (code === "auth/email-already-in-use") {
-        setError("An account with this email already exists.");
-      } else if (code === "auth/invalid-email") {
-        setError("Please enter a valid email address.");
-      } else if (code === "auth/weak-password") {
-        setError("Password is too weak. Use at least 8 characters.");
+      if (code === "auth/too-many-requests") {
+        setError("Too many requests. Please wait before resending.");
       } else {
-        setError("Registration failed. Please try again.");
+        setError("Failed to resend verification email.");
       }
-      setIsLoading(false);
+    } finally {
+      setIsResending(false);
     }
+  };
+
+  // Sign out the unverified session before going back, otherwise the login
+  // page's onAuthStateChanged will see the unverified user and immediately
+  // redirect back here.
+  const handleBackToSignIn = async () => {
+    await auth.signOut();
+    router.push("/login");
   };
 
   const toggleTheme = () => {
@@ -103,22 +124,6 @@ export default function RegisterPage() {
     setIsDark(nextDark);
     localStorage.setItem("navkon_theme", nextDark ? "dark" : "light");
   };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && name && email && password && confirm && !isLoading) {
-      handleRegister();
-    }
-  };
-
-  const passwordStrength = () => {
-    if (!password) return null;
-    if (password.length < 6) return { label: "Weak", color: "text-red", width: "w-1/4" };
-    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password))
-      return { label: "Fair", color: "text-yellow-500", width: "w-2/4" };
-    return { label: "Strong", color: "text-green", width: "w-full" };
-  };
-
-  const strength = passwordStrength();
 
   if (!mounted) return null;
 
@@ -156,111 +161,79 @@ export default function RegisterPage() {
               <span className="text-green">kon</span>
             </div>
             <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[1.5px] sm:tracking-[2px] text-ink-muted">
-              Create Account
+              Verify Email
             </div>
           </div>
 
-          <div className="space-y-4 sm:space-y-5">
-            {/* Name */}
-            <div>
-              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
-                Full Name
+          <div className="space-y-6 text-center">
+            {/* Animated Email Icon */}
+            <div className="flex justify-center">
+              <div className="relative w-16 h-16 rounded-2xl bg-orange/10 border border-orange/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                {/* Pulsing dot */}
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange rounded-full">
+                  <span className="absolute inset-0 rounded-full bg-orange animate-ping opacity-75" />
+                </span>
               </div>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="John Doe"
-                disabled={isLoading}
-                className="w-full bg-surface2 border border-border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono focus:border-orange outline-none transition-colors"
-              />
             </div>
 
-            {/* Email */}
             <div>
-              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
-                Email
-              </div>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="you@example.com"
-                disabled={isLoading}
-                className="w-full bg-surface2 border border-border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono focus:border-orange outline-none transition-colors"
-              />
+              <div className="font-serif text-lg text-foreground mb-2">Verify your email</div>
+              <p className="font-mono text-[11px] text-ink-muted leading-relaxed">
+                We sent a verification link to{" "}
+                {emailParam && <span className="text-orange block mt-1">{emailParam}</span>}
+              </p>
             </div>
 
-            {/* Password */}
-            <div>
-              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
-                Password
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="••••••••"
-                disabled={isLoading}
-                className="w-full bg-surface2 border border-border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono focus:border-orange outline-none transition-colors"
-              />
-              {/* Password Strength Indicator */}
-              {strength && (
-                <div className="mt-2">
-                  <div className="h-1 w-full bg-surface2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${strength.width} ${
-                        strength.label === "Weak"
-                          ? "bg-red"
-                          : strength.label === "Fair"
-                          ? "bg-yellow-500"
-                          : "bg-green"
-                      }`}
-                    />
-                  </div>
-                  <div className={`font-mono text-[9px] mt-1 ${strength.color}`}>{strength.label}</div>
+            <div className="p-3 bg-surface2 border border-border rounded-xl text-left">
+              <div className="font-mono text-[10px] text-ink-muted space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="text-orange mt-px">1.</span>
+                  <span>Open your email inbox</span>
                 </div>
-              )}
-              <div className="font-mono text-[9px] text-ink-ghost mt-1">
-                Min 8 chars, 1 uppercase, 1 number
+                <div className="flex items-start gap-2">
+                  <span className="text-orange mt-px">2.</span>
+                  <span>Click the verification link from Navkon</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-orange mt-px">3.</span>
+                  <span>Return here — you&apos;ll be redirected automatically</span>
+                </div>
               </div>
             </div>
 
-            {/* Confirm Password */}
-            <div>
-              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
-                Confirm Password
-              </div>
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="••••••••"
-                disabled={isLoading}
-                className={`w-full bg-surface2 border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono outline-none transition-colors
-                  ${confirm && confirm !== password ? "border-red focus:border-red" : "border-border focus:border-orange"}`}
-              />
-              {confirm && confirm !== password && (
-                <div className="font-mono text-[9px] text-red mt-1">Passwords do not match</div>
-              )}
+            {/* Auto-checking indicator */}
+            <div className="flex items-center justify-center gap-2 font-mono text-[10px] text-ink-dim">
+              <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+              Checking automatically every 5 seconds...
             </div>
 
             {error && (
-              <div className="bg-red/10 border border-red text-red text-[10px] sm:text-[11px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-sans">
+              <div className="bg-red/10 border border-red text-red text-[10px] px-3 py-2 rounded-xl font-sans">
                 {error}
               </div>
             )}
 
+            {resendSuccess && (
+              <div className="bg-green/10 border border-green text-green text-[10px] px-3 py-2 rounded-xl font-sans">
+                Verification email resent successfully!
+              </div>
+            )}
+
+            {/* Manual Check Button */}
             <button
-              onClick={handleRegister}
-              disabled={isLoading || !name || !email || !password || !confirm}
-              className="w-full bg-orange hover:bg-orange-mid disabled:opacity-50 disabled:cursor-not-allowed transition-all text-white font-medium py-3 sm:py-3.5 rounded-xl text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange/20 active:scale-[0.98]"
+              onClick={handleCheckVerification}
+              disabled={isChecking}
+              className="w-full bg-orange hover:bg-orange-mid disabled:opacity-50 disabled:cursor-not-allowed transition-all text-white font-medium py-3 rounded-xl text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange/20 active:scale-[0.98]"
             >
-              {isLoading ? (
+              {isChecking ? (
                 <>
                   <svg
                     className="animate-spin h-4 w-4"
@@ -275,32 +248,48 @@ export default function RegisterPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span>Creating account...</span>
+                  <span>Checking...</span>
                 </>
               ) : (
-                "Create Account →"
+                "I've Verified My Email →"
               )}
             </button>
 
-            <div className="text-center">
-              <span className="font-mono text-[10px] sm:text-xs text-ink-muted">Already have an account? </span>
-              <a href="/login" className="font-mono text-[10px] sm:text-xs text-orange hover:text-orange-mid transition-colors">
-                Sign in →
-              </a>
-            </div>
+            {/* Resend */}
+            <button
+              onClick={handleResend}
+              disabled={isResending || resendCountdown > 0}
+              className="w-full bg-surface2 hover:border-orange disabled:opacity-50 disabled:cursor-not-allowed border border-border transition-all text-ink-muted hover:text-orange font-mono py-2.5 rounded-xl text-xs tracking-wider active:scale-[0.98]"
+            >
+              {resendCountdown > 0
+                ? `Resend in ${resendCountdown}s`
+                : isResending
+                ? "Sending..."
+                : "Resend Verification Email"}
+            </button>
+
+            {/* Back to Sign In — signs out the unverified session first */}
+            <button
+              onClick={handleBackToSignIn}
+              className="font-mono text-[10px] sm:text-xs text-ink-muted hover:text-orange transition-colors"
+            >
+              ← Back to Sign In
+            </button>
           </div>
 
           <div className="text-center mt-6 sm:mt-8 font-mono text-[8px] sm:text-[9px] text-ink-ghost tracking-wider sm:tracking-widest">
             NAVKON LABS · INTERNAL PORTAL
           </div>
         </div>
-
-        <div className="mt-4 sm:mt-6 text-center">
-          <p className="text-[10px] sm:text-xs text-ink-muted font-mono">
-            A verification email will be sent after registration
-          </p>
-        </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
