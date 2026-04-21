@@ -87,21 +87,22 @@ export default function BillingPage() {
   return (
     <div className="font-mono text-ink">
       {/* Header */}
-      <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row flex-wrap justify-between items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">Billing</h1>
-          <div className="flex items-center gap-3 mt-2">
-            <div className="h-px w-7 bg-green rounded" />
-            <p className="text-ink-muted text-sm font-light">Invoices, transactions &amp; payment history</p>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tighter text-ink">Billing</h1>
+          <div className="flex items-center gap-2 sm:gap-3 mt-2">
+            <div className="h-px w-5 sm:w-7 bg-green rounded" />
+            <p className="text-ink-muted text-xs sm:text-sm font-light">Invoices, transactions &amp; payment history</p>
           </div>
         </div>
-        <div className="flex gap-3">
-          <button className="bg-orange hover:opacity-90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
-            ↓ Export CSV
+        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+          <button className="flex-1 sm:flex-none bg-orange hover:opacity-90 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2">
+            <span className="hidden xs:inline">↓ Export CSV</span>
+            <span className="xs:hidden">Export</span>
           </button>
           <button
             onClick={() => setIsNewInvoiceModalOpen(true)}
-            className="bg-orange hover:opacity-90 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+            className="flex-1 sm:flex-none bg-orange hover:opacity-90 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all"
           >
             + New Invoice
           </button>
@@ -109,43 +110,43 @@ export default function BillingPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {summary.map((s, i) => (
           <div
             key={i}
-            className="bg-surface border border-border rounded-2xl p-6 flex items-center gap-5 hover:border-orange-border transition-colors"
+            className="bg-surface border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 hover:border-orange-border transition-colors"
           >
             <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 border"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0 border"
               style={{ background: s.dimBg, borderColor: s.dimBorder }}
             >
               {s.icon}
             </div>
             <div>
-              <div className="text-2xl font-semibold tracking-tighter font-serif" style={{ color: s.color }}>
+              <div className="text-xl sm:text-2xl font-semibold tracking-tighter font-serif" style={{ color: s.color }}>
                 {s.value}
               </div>
-              <div className="text-xs uppercase tracking-widest text-ink-muted mt-1">{s.label}</div>
+              <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-ink-muted mt-1">{s.label}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Search + Filters */}
-      <div className="flex flex-wrap gap-3 items-center mb-6">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center mb-4 sm:mb-6">
         <input
           type="text"
           placeholder="Search invoice, account, email…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-surface border border-border text-ink px-4 py-2.5 rounded-xl text-sm w-72 focus:border-orange outline-none transition-colors font-mono placeholder:text-ink-dim"
+          className="bg-surface border border-border text-ink px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-72 focus:border-orange outline-none transition-colors font-mono placeholder:text-ink-dim"
         />
         <div className="flex gap-2 flex-wrap">
           {allStatuses.map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-5 py-2 text-sm font-medium rounded-xl border transition-all ${
+              className={`px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-xl border transition-all ${
                 statusFilter === s
                   ? "bg-orange-dim border-orange text-orange"
                   : "bg-transparent border-border text-ink-muted hover:border-orange-border hover:text-orange"
@@ -157,8 +158,8 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Invoice Table */}
-      <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+      {/* Invoice Table - Desktop */}
+      <div className="hidden md:block bg-surface border border-border rounded-2xl overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-surface2">
@@ -226,17 +227,80 @@ export default function BillingPage() {
         )}
       </div>
 
+      {/* Invoice Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((inv) => {
+          const ss = statusStyle[inv.status];
+          return (
+            <div key={inv.id} className="bg-surface border border-border rounded-xl p-4">
+              <div className="flex justify-between items-start mb-3">
+                <span className="font-medium text-orange text-base font-mono">{inv.id}</span>
+                <span
+                  className="inline-flex items-center gap-1.5 text-[10px] px-3 py-1 rounded-full border"
+                  style={{ color: ss.text, background: ss.bg, borderColor: `${ss.text}40` }}
+                >
+                  {inv.status}
+                </span>
+              </div>
+
+              <div className="mb-3">
+                <div className="text-sm text-ink font-medium">{inv.account}</div>
+                <div className="text-xs text-ink-muted mt-0.5">{inv.email}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs mb-3 pb-3 border-b border-border">
+                <div>
+                  <div className="text-ink-ghost uppercase tracking-wider text-[10px]">Amount</div>
+                  <div className="text-ink font-medium text-base">{inv.amount}</div>
+                </div>
+                <div>
+                  <div className="text-ink-ghost uppercase tracking-wider text-[10px]">Issue Date</div>
+                  <div className="text-ink-muted">{inv.date}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-ink-ghost uppercase tracking-wider text-[10px]">Due Date</div>
+                  <div style={{ color: inv.status === "Overdue" ? "var(--red)" : "var(--ink-muted)" }}>
+                    {inv.due}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                {inv.status !== "Paid" && (
+                  <button
+                    onClick={() => markPaid(inv.id)}
+                    className="flex-1 px-3 py-2 text-xs border border-green-border text-green hover:bg-green-dim rounded-lg transition-all"
+                  >
+                    Mark Paid
+                  </button>
+                )}
+                <button className="flex-1 px-3 py-2 text-xs border border-border hover:border-orange-border hover:text-orange rounded-lg transition-all">
+                  PDF
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-ink-ghost text-sm bg-surface border border-border rounded-xl">
+            {invoiceList.length === 0
+              ? "No invoices yet. Click '+ New Invoice' to create one."
+              : "No invoices match your search or filter."}
+          </div>
+        )}
+      </div>
+
       {/* GST note */}
-      <p className="mt-4 text-[10px] text-ink-ghost font-mono tracking-wide">
+      <p className="mt-3 sm:mt-4 text-[9px] sm:text-[10px] text-ink-ghost font-mono tracking-wide">
         Invoices are currently issued without GST. Applicable GST will be charged upon registration. Minimum billing: 1 hour; increments: 30 min.
       </p>
 
       {/* New Invoice Modal */}
       {isNewInvoiceModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-md p-8">
-            <h2 className="font-serif text-2xl font-bold mb-6 text-ink">Create New Invoice</h2>
-            <form onSubmit={handleCreateInvoice} className="space-y-5">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-md p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <h2 className="font-serif text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-ink">Create New Invoice</h2>
+            <form onSubmit={handleCreateInvoice} className="space-y-4 sm:space-y-5">
               <div>
                 <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">Account / Company Name</label>
                 <input
@@ -255,7 +319,7 @@ export default function BillingPage() {
                   placeholder="contact@company.com"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-widest text-ink-muted mb-2">Amount ($)</label>
                   <input
@@ -277,13 +341,13 @@ export default function BillingPage() {
               <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button" onClick={() => setIsNewInvoiceModalOpen(false)}
-                  className="px-6 py-2.5 border border-border bg-surface2 hover:bg-surface rounded-xl text-sm transition-all"
+                  className="px-5 sm:px-6 py-2.5 border border-border bg-surface2 hover:bg-surface rounded-xl text-sm transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-2.5 bg-orange hover:opacity-90 text-white rounded-xl text-sm font-medium transition-all"
+                  className="px-6 sm:px-8 py-2.5 bg-orange hover:opacity-90 text-white rounded-xl text-sm font-medium transition-all"
                 >
                   Create Invoice
                 </button>

@@ -50,29 +50,29 @@ export default function Dashboard() {
   return (
     <div className="font-mono text-ink">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tighter text-ink">
           Overview
         </h1>
-        <div className="flex items-center gap-3 mt-2">
-          <div className="h-px w-8 bg-green rounded" />
-          <p className="text-ink-muted text-sm font-light">
-            {today} — All systems nominal
+        <div className="flex items-center gap-2 sm:gap-3 mt-2">
+          <div className="h-px w-6 sm:w-8 bg-green rounded" />
+          <p className="text-ink-muted text-xs sm:text-sm font-light">
+            <span className="hidden sm:inline">{today} — </span>All systems nominal
           </p>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {stats.map((s, i) => (
           <div
             key={i}
-            className="bg-surface border border-border rounded-2xl p-6 hover:border-orange hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200"
+            className="bg-surface border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-orange hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200"
           >
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-2xl">{s.icon}</span>
+            <div className="flex justify-between items-start mb-3 sm:mb-4">
+              <span className="text-xl sm:text-2xl">{s.icon}</span>
               <span
-                className={`text-xs px-3 py-1 rounded-full border font-mono ${
+                className={`text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border font-mono ${
                   s.up
                     ? "text-green bg-green-dim border-green-border"
                     : "text-red bg-red-dim border-red"
@@ -81,33 +81,33 @@ export default function Dashboard() {
                 {s.change}
               </span>
             </div>
-            <div className="text-3xl font-semibold tracking-tighter font-serif text-ink mb-1">
+            <div className="text-xl sm:text-3xl font-semibold tracking-tighter font-serif text-ink mb-1">
               {s.value}
             </div>
-            <div className="text-xs uppercase tracking-widest text-ink-muted">
+            <div className="text-[9px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-ink-muted">
               {s.label}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* Monthly Revenue Chart */}
-        <div className="lg:col-span-3 bg-surface border border-border rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="lg:col-span-3 bg-surface border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-2">
             <div>
-              <h3 className="font-serif font-bold text-lg text-ink">Monthly Revenue</h3>
-              <div className="h-px w-10 bg-green rounded mt-2" />
+              <h3 className="font-serif font-bold text-base sm:text-lg text-ink">Monthly Revenue</h3>
+              <div className="h-px w-8 sm:w-10 bg-green rounded mt-2" />
             </div>
-            <span className="text-xs uppercase tracking-widest text-ink-muted">
+            <span className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-ink-muted">
               {new Date().getFullYear() - 1} — {new Date().getFullYear()}
             </span>
           </div>
 
-          <div className="flex items-end gap-2 h-40">
+          <div className="flex items-end gap-1 sm:gap-2 h-32 sm:h-40">
             {bars.map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full bg-surface2 border border-border rounded h-36 flex items-end overflow-hidden">
+              <div key={i} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
+                <div className="w-full bg-surface2 border border-border rounded h-28 sm:h-36 flex items-end overflow-hidden">
                   <div
                     className="w-full rounded transition-all duration-1000"
                     style={{
@@ -117,34 +117,36 @@ export default function Dashboard() {
                     }}
                   />
                 </div>
-                <span className="text-[10px] uppercase tracking-widest text-ink-ghost">
-                  {months[i]}
+                <span className="text-[8px] sm:text-[10px] uppercase tracking-wider sm:tracking-widest text-ink-ghost">
+                  {months[i].slice(0, 3)}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="flex gap-6 mt-6 text-xs text-ink-muted">
-            <div className="flex items-center gap-2">
+          <div className="flex gap-4 sm:gap-6 mt-4 sm:mt-6 text-[10px] sm:text-xs text-ink-muted">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-2 h-2 rounded bg-orange" />
-              Current month
+              <span className="hidden sm:inline">Current month</span>
+              <span className="sm:hidden">Current</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-2 h-2 rounded bg-green" />
-              High months
+              <span className="hidden sm:inline">High months</span>
+              <span className="sm:hidden">High</span>
             </div>
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-surface border border-border rounded-2xl p-6">
-          <div className="mb-6">
-            <h3 className="font-serif font-bold text-lg text-ink">Recent Activity</h3>
-            <div className="h-px w-8 bg-green rounded mt-2" />
+        <div className="lg:col-span-2 bg-surface border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="mb-4 sm:mb-6">
+            <h3 className="font-serif font-bold text-base sm:text-lg text-ink">Recent Activity</h3>
+            <div className="h-px w-6 sm:w-8 bg-green rounded mt-2" />
           </div>
 
           {activityData.length === 0 ? (
-            <div className="py-12 text-center text-ink-ghost text-sm">
+            <div className="py-8 sm:py-12 text-center text-ink-ghost text-xs sm:text-sm">
               No recent activity yet.
             </div>
           ) : (
@@ -152,7 +154,7 @@ export default function Dashboard() {
               {activityData.map((a, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-surface2 transition-colors"
+                  className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:bg-surface2 transition-colors"
                 >
                   <div
                     className="w-2 h-2 rounded-full shrink-0"
@@ -162,10 +164,10 @@ export default function Dashboard() {
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-ink-soft truncate">{a.event}</div>
-                    <div className="text-xs text-ink-muted mt-0.5">{a.user}</div>
+                    <div className="text-xs sm:text-sm text-ink-soft truncate">{a.event}</div>
+                    <div className="text-[10px] sm:text-xs text-ink-muted mt-0.5">{a.user}</div>
                   </div>
-                  <div className="text-xs text-ink-dim whitespace-nowrap">{a.time}</div>
+                  <div className="text-[10px] sm:text-xs text-ink-dim whitespace-nowrap">{a.time}</div>
                 </div>
               ))}
             </div>
@@ -174,9 +176,9 @@ export default function Dashboard() {
       </div>
 
       {/* UDYAM footer note */}
-      <div className="mt-8 pt-4 border-t border-border flex items-center justify-between text-[9px] uppercase tracking-widest text-ink-ghost font-mono">
+      <div className="mt-6 sm:mt-8 pt-3 sm:pt-4 border-t border-border flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2 text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest text-ink-ghost font-mono">
         <span>NAVKON LABS · UDYAM-MH-33-0750188</span>
-        <span>Invoices issued without GST · GST applicable upon registration</span>
+        <span className="text-[7px] sm:text-[9px]">Invoices issued without GST · GST applicable upon registration</span>
       </div>
     </div>
   );

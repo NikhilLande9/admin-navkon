@@ -35,12 +35,12 @@ function Toggle({ defaultOn = false, onChange }: { defaultOn?: boolean; onChange
 
 function SettingRow({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="flex justify-between items-center py-4 border-b border-border last:border-none">
-      <div>
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-6 py-4 border-b border-border last:border-none">
+      <div className="flex-1">
         <div className="text-sm text-ink font-sans font-medium">{label}</div>
-        {desc && <div className="text-xs text-ink-muted mt-1 max-w-md font-sans">{desc}</div>}
+        {desc && <div className="text-xs text-ink-muted mt-1 font-sans">{desc}</div>}
       </div>
-      <div className="shrink-0 ml-6">{children}</div>
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }
@@ -53,7 +53,7 @@ function FieldInput({ placeholder, defaultValue, type = "text" }: {
       type={type}
       defaultValue={defaultValue}
       placeholder={placeholder}
-      className="bg-surface2 border border-border text-ink px-4 py-2.5 rounded-xl text-sm font-mono w-60 focus:border-orange outline-none transition-colors"
+      className="bg-surface2 border border-border text-ink px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-mono w-full sm:w-60 focus:border-orange outline-none transition-colors"
     />
   );
 }
@@ -63,8 +63,8 @@ export default function SettingsPage() {
   const [, setThemeKey] = useState(0);
 
   const saveButton = (label: string) => (
-    <div className="mt-8">
-      <button className="bg-orange hover:opacity-90 text-white px-8 py-3 rounded-xl text-sm font-sans font-medium transition-all shadow-lg active:scale-95">
+    <div className="mt-6 sm:mt-8">
+      <button className="w-full sm:w-auto bg-orange hover:opacity-90 text-white px-6 sm:px-8 py-3 rounded-xl text-sm font-sans font-medium transition-all shadow-lg active:scale-95">
         {label}
       </button>
     </div>
@@ -83,7 +83,7 @@ export default function SettingsPage() {
           <FieldInput defaultValue="admin@navkon.io" type="email" />
         </SettingRow>
         <SettingRow label="Timezone" desc="Affects all timestamp displays and scheduled tasks.">
-          <select className="bg-surface2 border border-border text-ink px-4 py-2.5 rounded-xl text-sm font-mono focus:border-orange outline-none min-w-48 transition-colors">
+          <select className="bg-surface2 border border-border text-ink px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-mono focus:border-orange outline-none w-full sm:min-w-48 transition-colors">
             <option>Asia/Kolkata (IST)</option>
             <option>America/New_York (EST)</option>
             <option>Europe/London (GMT)</option>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
           <Toggle defaultOn />
         </SettingRow>
         <SettingRow label="Session Timeout" desc="Automatically log out after inactivity period.">
-          <select className="bg-surface2 border border-border text-ink px-4 py-2.5 rounded-xl text-sm font-mono focus:border-orange outline-none min-w-48 transition-colors">
+          <select className="bg-surface2 border border-border text-ink px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-mono focus:border-orange outline-none w-full sm:min-w-48 transition-colors">
             <option>30 minutes</option>
             <option>1 hour</option>
             <option>4 hours</option>
@@ -124,18 +124,20 @@ export default function SettingsPage() {
           </select>
         </SettingRow>
         <SettingRow label="API Key" desc="Use this key to authenticate with the Navkon API.">
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <input
               type="password"
               defaultValue="sk-navkon-xxxxxxxxxxx"
-              className="bg-surface2 border border-border text-ink-muted px-4 py-2.5 rounded-xl text-sm w-56 font-mono focus:border-orange outline-none transition-colors"
+              className="bg-surface2 border border-border text-ink-muted px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-56 font-mono focus:border-orange outline-none transition-colors"
             />
-            <button className="px-5 py-2.5 border border-border text-ink-muted hover:border-orange hover:text-orange rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all">
-              Reveal
-            </button>
-            <button className="px-5 py-2.5 border border-red text-red hover:bg-red-dim rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all">
-              Rotate
-            </button>
+            <div className="flex gap-2">
+              <button className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 border border-border text-ink-muted hover:border-orange hover:text-orange rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all">
+                Reveal
+              </button>
+              <button className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 border border-red text-red hover:bg-red-dim rounded-xl text-[10px] font-mono uppercase tracking-wider transition-all">
+                Rotate
+              </button>
+            </div>
           </div>
         </SettingRow>
         <SettingRow label="IP Allowlist" desc="Restrict access to specific IP addresses only.">
@@ -185,24 +187,24 @@ export default function SettingsPage() {
           {integrations.map((intg) => (
             <div
               key={intg.name}
-              className="flex items-center gap-5 bg-surface2 border border-border rounded-2xl p-6 transition-all hover:border-orange-border"
+              className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 bg-surface2 border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all hover:border-orange-border"
             >
-              <div className="text-3xl">{intg.icon}</div>
+              <div className="text-2xl sm:text-3xl">{intg.icon}</div>
               <div className="flex-1">
                 <div className="font-sans font-medium text-ink">{intg.name}</div>
-                <div className="text-sm text-ink-muted mt-1 font-sans">{intg.desc}</div>
+                <div className="text-xs sm:text-sm text-ink-muted mt-1 font-sans">{intg.desc}</div>
               </div>
               {intg.connected ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono uppercase tracking-wider px-4 py-1 bg-green-dim text-green border border-green-border rounded-full">
+                <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <span className="text-[10px] font-mono uppercase tracking-wider px-3 sm:px-4 py-1 bg-green-dim text-green border border-green-border rounded-full">
                     Connected
                   </span>
-                  <button className="px-5 py-2 text-[10px] font-mono uppercase tracking-wider border border-border hover:border-orange hover:text-orange rounded-xl transition-all">
+                  <button className="px-4 sm:px-5 py-1.5 sm:py-2 text-[10px] font-mono uppercase tracking-wider border border-border hover:border-orange hover:text-orange rounded-xl transition-all">
                     Disconnect
                   </button>
                 </div>
               ) : (
-                <button className="px-6 py-2 text-[10px] font-mono uppercase tracking-wider border border-orange-border text-orange hover:bg-orange-dim rounded-xl transition-all">
+                <button className="w-full sm:w-auto px-5 sm:px-6 py-1.5 sm:py-2 text-[10px] font-mono uppercase tracking-wider border border-orange-border text-orange hover:bg-orange-dim rounded-xl transition-all">
                   Connect
                 </button>
               )}
@@ -213,19 +215,19 @@ export default function SettingsPage() {
     }
 
     if (tab === "Danger Zone") return (
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {[
           { title: "Reset All Settings",   desc: "Revert all configuration to factory defaults. This cannot be undone.",               btnLabel: "Reset",  fill: false },
           { title: "Revoke All API Keys",   desc: "Immediately invalidate all active API tokens. All integrations will break.",         btnLabel: "Revoke", fill: false },
           { title: "Delete Organization",   desc: "Permanently delete this organization and all associated data. Irreversible.",        btnLabel: "Delete", fill: true  },
         ].map((item) => (
-          <div key={item.title} className="bg-red-dim border border-red rounded-2xl p-6 flex justify-between items-center">
-            <div>
-              <div className="font-sans font-bold text-red">{item.title}</div>
-              <div className="text-sm text-ink-muted mt-2 font-sans">{item.desc}</div>
+          <div key={item.title} className="bg-red-dim border border-red rounded-xl sm:rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex-1">
+              <div className="font-sans font-bold text-red text-sm sm:text-base">{item.title}</div>
+              <div className="text-xs sm:text-sm text-ink-muted mt-1 sm:mt-2 font-sans">{item.desc}</div>
             </div>
             <button
-              className={`px-7 py-2.5 rounded-xl text-[10px] font-mono uppercase tracking-widest transition-all active:scale-95 ${
+              className={`w-full sm:w-auto px-5 sm:px-7 py-2 sm:py-2.5 rounded-xl text-[10px] font-mono uppercase tracking-widest transition-all active:scale-95 ${
                 item.fill ? "bg-red text-white hover:opacity-90" : "border border-red text-red hover:bg-red-dim"
               }`}
             >
@@ -241,24 +243,24 @@ export default function SettingsPage() {
 
   return (
     <div className="text-ink">
-      <div className="mb-8">
-        <h1 className="font-serif text-3xl font-bold tracking-tighter text-ink">Settings</h1>
-        <div className="flex items-center gap-3 mt-2">
-          <div className="h-px w-7 bg-green rounded-full" />
-          <p className="text-ink-muted text-sm font-sans font-light">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tighter text-ink">Settings</h1>
+        <div className="flex items-center gap-2 sm:gap-3 mt-2">
+          <div className="h-px w-5 sm:w-7 bg-green rounded-full" />
+          <p className="text-ink-muted text-xs sm:text-sm font-sans font-light">
             Configure application preferences and system behavior
           </p>
         </div>
       </div>
 
-      <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-surface border border-border rounded-xl sm:rounded-2xl overflow-hidden shadow-sm">
         {/* Tab Bar */}
         <div className="flex border-b border-border bg-surface2 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-8 py-4 text-xs font-mono uppercase tracking-widest border-b-2 transition-all whitespace-nowrap ${
+              className={`px-4 sm:px-8 py-3 sm:py-4 text-[10px] sm:text-xs font-mono uppercase tracking-wider sm:tracking-widest border-b-2 transition-all whitespace-nowrap ${
                 activeTab === tab
                   ? "text-orange border-orange"
                   : "text-ink-muted border-transparent hover:text-ink-soft"
@@ -268,7 +270,7 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           <TabContent tab={activeTab} />
         </div>
       </div>

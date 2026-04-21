@@ -47,6 +47,14 @@
   --font-serif: 'DM Serif Display', serif;
   --font-syne:  'Syne', sans-serif;
   --font-sans:  'DM Sans', sans-serif;
+
+  /* Custom Breakpoints */
+  --breakpoint-xs: 475px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
 }
 
 /* ── Base Reset ──────────────────────────────────────────────────────────── */
@@ -62,6 +70,8 @@
     color: var(--foreground);
     transition: background 0.3s, color 0.3s;
     min-height: 100vh;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
   }
 
   /* ── Grain Overlay (Navkon tactile aesthetic) ────────────────────────── */
@@ -88,6 +98,40 @@
     height: 3px;
     background: var(--green);
     border-radius: 2px;
+  }
+
+  /* Mobile-specific utilities */
+  @media (max-width: 475px) {
+    .xs\:hidden {
+      display: none !important;
+    }
+    .xs\:inline {
+      display: inline !important;
+    }
+    .xs\:block {
+      display: block !important;
+    }
+  }
+
+  /* Touch target improvements for mobile */
+  @media (max-width: 768px) {
+    button, 
+    a,
+    input[type="checkbox"],
+    input[type="radio"],
+    select {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Prevent iOS zoom on input focus */
+  @media (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 }
 
@@ -164,6 +208,11 @@
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-dim); }
 
+/* Mobile: thinner scrollbar */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+}
+
 /* ── Selection ──────────────────────────────────────────────────────────── */
 ::selection {
   background: var(--orange-dim);
@@ -182,4 +231,27 @@
   border-color: var(--orange);
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Disable hover transform on mobile/touch devices */
+@media (hover: none) {
+  .navkon-card:hover {
+    transform: none;
+  }
+}
+
+/* ── Mobile Safe Area Padding ─────────────────────────────────────────── */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* ── Responsive Table Helper ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .responsive-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
