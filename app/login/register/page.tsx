@@ -25,8 +25,14 @@ export default function RegisterPage() {
 
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user && user.emailVerified) {
+        // Already fully logged in — no need to register again
         router.push("/dashboard");
+      } else if (user && !user.emailVerified) {
+        // Mid-verification session: registered but not yet verified.
+        // Send back to verify page rather than showing register form.
+        router.push("/login/verify-email?email=" + encodeURIComponent(user.email ?? ""));
       } else {
+        // No session — show the register form
         setMounted(true);
       }
     });
@@ -58,24 +64,29 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      // Set display name
       await updateProfile(user, { displayName: name.trim() });
 
-      // Save user profile to Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      // Use lowercased email as the Firestore document ID to avoid
+      // duplicates and make lookups predictable across the app.
+      const emailKey = email.trim().toLowerCase();
+
+      await setDoc(doc(db, "users", emailKey), {
         uid: user.uid,
         name: name.trim(),
-        email: email.trim().toLowerCase(),
-        role: "admin",
+        email: emailKey,
+        role: "Admin",
         createdAt: serverTimestamp(),
         emailVerified: false,
       });
 
-      // Send email verification
-      await sendEmailVerification(user);
+      await sendEmailVerification(user, {
+        url: `${window.location.origin}/login`,
+        handleCodeInApp: false,
+      });
 
-      // Sign out until they verify
-      await auth.signOut();
+      // Keep user signed in — verify-email page needs auth.currentUser
+      // to call reload() and resend the verification email.
+      // Sign-out only happens from the verify-email page's "Back to Sign In" button.
 
       router.push("/login/verify-email?email=" + encodeURIComponent(email.trim()));
     } catch (err: unknown) {
@@ -156,7 +167,6 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-4 sm:space-y-5">
-            {/* Name */}
             <div>
               <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
                 Full Name
@@ -172,7 +182,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
                 Email
@@ -188,7 +197,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
                 Password
@@ -202,7 +210,6 @@ export default function RegisterPage() {
                 disabled={isLoading}
                 className="w-full bg-surface2 border border-border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono focus:border-orange outline-none transition-colors"
               />
-              {/* Password Strength Indicator */}
               {strength && (
                 <div className="mt-2">
                   <div className="h-1 w-full bg-surface2 rounded-full overflow-hidden">
@@ -224,7 +231,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
                 Confirm Password
@@ -279,7 +285,10 @@ export default function RegisterPage() {
 
             <div className="text-center">
               <span className="font-mono text-[10px] sm:text-xs text-ink-muted">Already have an account? </span>
-              <a href="/login" className="font-mono text-[10px] sm:text-xs text-orange hover:text-orange-mid transition-colors">
+              <a
+                href="/login"
+                className="font-mono text-[10px] sm:text-xs text-orange hover:text-orange-mid transition-colors"
+              >
                 Sign in →
               </a>
             </div>

@@ -12,9 +12,11 @@ import {
   X,
   LogOut,
   ShieldCheck,
+  Crown,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AppProviders";
 import { useRole } from "@/components/providers/AppProviders";
+import { SUPER_ADMIN_EMAIL } from "@/components/providers/AppProviders";
 import type { NavPage } from "@/components/providers/AppProviders";
 
 const ALL_NAV_ITEMS: { name: NavPage; path: string; icon: React.ElementType }[] = [
@@ -26,11 +28,20 @@ const ALL_NAV_ITEMS: { name: NavPage; path: string; icon: React.ElementType }[] 
   { name: "Roles",     path: "/dashboard/roles",    icon: ShieldCheck     },
 ];
 
+const ROLE_BADGE: Record<string, { bg: string; text: string; border: string }> = {
+  "Super Admin": { bg: "var(--orange-dim)",  text: "var(--orange)",    border: "var(--orange-border)" },
+  Admin:         { bg: "var(--orange-dim)",  text: "var(--orange)",    border: "var(--orange-border)" },
+  Accountant:    { bg: "var(--green-dim)",   text: "var(--green)",     border: "var(--green-border)"  },
+  Support:       { bg: "rgba(96,165,250,0.1)", text: "#60a5fa",        border: "rgba(96,165,250,0.25)" },
+  Intern:        { bg: "rgba(168,85,247,0.1)", text: "#a855f7",        border: "rgba(168,85,247,0.25)" },
+  Guest:         { bg: "var(--surface2)",    text: "var(--ink-dim)",   border: "var(--border)"        },
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { permissions, roleLoading, role } = useRole();
+  const { permissions, roleLoading, role, isSuperAdmin } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -49,14 +60,8 @@ export default function Sidebar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    document.body.style.overflow = isOpen ? "hidden" : "unset";
+    return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
 
   const handleLogout = async () => {
@@ -69,8 +74,7 @@ export default function Sidebar() {
     }
   };
 
-  const displayName =
-    user?.displayName || user?.email?.split("@")[0] || "Admin";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Admin";
   const initials = displayName
     .split(" ")
     .map((w: string) => w[0])
@@ -78,16 +82,13 @@ export default function Sidebar() {
     .toUpperCase()
     .slice(0, 2);
 
-  // Role badge color
-  const roleBadgeStyle: Record<string, { bg: string; text: string; border: string }> = {
-    Admin:      { bg: "var(--orange-dim)",  text: "var(--orange)", border: "var(--orange-border)" },
-    Accountant: { bg: "var(--green-dim)",   text: "var(--green)",  border: "var(--green-border)"  },
-    Support:    { bg: "var(--blue-dim, #1e3a5f)", text: "var(--blue, #60a5fa)", border: "var(--blue-border, #1e40af)" },
-    Intern:     { bg: "var(--surface2)",    text: "var(--ink-soft)", border: "var(--border)" },
-    Guest:      { bg: "var(--surface2)",    text: "var(--ink-dim)",  border: "var(--border)" },
-  };
+  // Determine displayed role label (Super Admin gets a special label)
+  const isSuperAdminUser = user?.email === SUPER_ADMIN_EMAIL;
+  const displayRole = isSuperAdminUser ? "Super Admin" : (role ?? "Guest");
+  const badge = ROLE_BADGE[displayRole] ?? ROLE_BADGE["Guest"];
 
-  const badge = role ? roleBadgeStyle[role] : roleBadgeStyle["Guest"];
+  // Determine label for Roles page link
+  const rolesLinkLabel = isSuperAdminUser ? "Super Admin" : "Admin";
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -115,7 +116,6 @@ export default function Sidebar() {
 
         <nav className="flex flex-col gap-1">
           {roleLoading ? (
-            // Skeleton while loading permissions
             Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
@@ -136,11 +136,7 @@ export default function Sidebar() {
                       ? "bg-orange text-white border-transparent"
                       : "text-ink-muted border-transparent hover:bg-surface2 hover:text-ink hover:border-border"
                   }`}
-                  style={
-                    active
-                      ? { boxShadow: "0 4px 12px rgba(249,115,22,0.25)" }
-                      : {}
-                  }
+                  style={active ? { boxShadow: "0 4px 12px rgba(249,115,22,0.25)" } : {}}
                 >
                   <Icon
                     size={16}
@@ -148,17 +144,18 @@ export default function Sidebar() {
                     className={active ? "text-white" : "text-ink-dim"}
                   />
                   {item.name}
-                  {/* Badge for Roles page */}
+                  {/* Admin/Super Admin badge on Roles link */}
                   {item.name === "Roles" && (
                     <span
-                      className="ml-auto text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      className="ml-auto text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1"
                       style={{
                         background: "var(--orange-dim)",
                         color: active ? "white" : "var(--orange)",
                         border: "1px solid var(--orange-border)",
                       }}
                     >
-                      Admin
+                      {isSuperAdminUser && <Crown size={8} />}
+                      {rolesLinkLabel}
                     </span>
                   )}
                 </Link>
@@ -172,8 +169,14 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border">
         {/* User row */}
         <div className="flex items-center gap-3 px-2 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-orange-dim border border-orange-border flex items-center justify-center text-xs font-bold text-orange font-mono shrink-0">
+          <div className="w-8 h-8 rounded-full bg-orange-dim border border-orange-border flex items-center justify-center text-xs font-bold text-orange font-mono shrink-0 relative">
             {initials}
+            {/* Crown overlay for Super Admin */}
+            {isSuperAdminUser && (
+              <span className="absolute -top-2 -right-2 w-4 h-4 bg-orange rounded-full flex items-center justify-center shadow">
+                <Crown size={8} className="text-white" />
+              </span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-sans font-medium text-ink truncate">
@@ -186,20 +189,15 @@ export default function Sidebar() {
         </div>
 
         {/* Role badge */}
-        {role && (
-          <div className="px-2 mb-2">
-            <span
-              className="text-[9px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full border"
-              style={{
-                background: badge.bg,
-                color: badge.text,
-                borderColor: badge.border,
-              }}
-            >
-              {role}
-            </span>
-          </div>
-        )}
+        <div className="px-2 mb-2">
+          <span
+            className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full border"
+            style={{ background: badge.bg, color: badge.text, borderColor: badge.border }}
+          >
+            {isSuperAdminUser && <Crown size={8} />}
+            {displayRole}
+          </span>
+        </div>
 
         {/* Logout button */}
         <button
@@ -225,23 +223,14 @@ export default function Sidebar() {
         <SidebarContent />
       </aside>
 
-      {/* Mobile Menu Button */}
+      {/* Mobile FAB */}
       <button
         onClick={() => setIsOpen(true)}
         className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 bg-orange text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all active:scale-95"
         aria-label="Open menu"
         style={{ boxShadow: "0 8px 24px rgba(249,115,22,0.4)" }}
       >
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="18" x2="21" y2="18" />

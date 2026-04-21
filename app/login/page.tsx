@@ -21,12 +21,16 @@ export default function LoginPage() {
     const savedTheme = localStorage.getItem("navkon_theme");
     setIsDark(savedTheme !== "light");
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        if (!user.emailVerified) {
-          router.push("/login/verify-email");
-        } else {
+        if (user.emailVerified) {
+          // Fully verified — go to dashboard
           router.push("/dashboard");
+        } else {
+          // Stale unverified session (left over from a previous registration).
+          // Sign it out silently and show the login form normally.
+          await auth.signOut();
+          setMounted(true);
         }
       } else {
         setMounted(true);
@@ -51,7 +55,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Store session preference
       if (remember) {
         localStorage.setItem("navkon_remember", "true");
       }
@@ -59,7 +62,11 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code;
-      if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
+      if (
+        code === "auth/user-not-found" ||
+        code === "auth/wrong-password" ||
+        code === "auth/invalid-credential"
+      ) {
         setError("Invalid email or password.");
       } else if (code === "auth/too-many-requests") {
         setError("Too many failed attempts. Try again later or reset your password.");

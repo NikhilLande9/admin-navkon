@@ -13,7 +13,12 @@ service cloud.firestore {
     }
 
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      // Documents are keyed by lowercased email, not UID.
+      // Guard against a missing user doc to avoid permission-denied crashes.
+      let emailKey = request.auth.token.email.lower();
+      return exists(/databases/$(database)/documents/users/$(emailKey))
+        ? get(/databases/$(database)/documents/users/$(emailKey)).data.role
+        : null;
     }
 
     // ── Public website leads ───────────────────────────────────────────────
@@ -23,15 +28,16 @@ service cloud.firestore {
     }
 
     // ── Users collection ───────────────────────────────────────────────────
-    // Any signed-in user can read their own doc.
-    // Admin can read/write all user docs.
-    // Regular users can read others (needed for the roles page admin list),
-    // but only Admin can change roles.
-    match /users/{uid} {
+    // Documents are keyed by lowercased email (e.g. "user@example.com").
+    // Any signed-in user can read all user docs (needed for roles page).
+    // Users can update their own non-sensitive fields.
+    // Only the hardcoded admin can create/delete docs or change roles.
+    match /users/{userEmail} {
       allow read: if isSignedIn();
 
-      // Users can update their own non-role fields (e.g. displayName)
-      allow update: if isSignedIn() && request.auth.uid == uid
+      // Users can update their own doc but cannot touch role or email
+      allow update: if isSignedIn()
+        && request.auth.token.email.lower() == userEmail
         && !("role" in request.resource.data)
         && !("email" in request.resource.data);
 
