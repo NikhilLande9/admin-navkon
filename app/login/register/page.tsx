@@ -2,15 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [isDark, setIsDark] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,12 +23,8 @@ export default function LoginPage() {
     setIsDark(savedTheme !== "light");
 
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        if (!user.emailVerified) {
-          router.push("/login/verify-email");
-        } else {
-          router.push("/dashboard");
-        }
+      if (user && user.emailVerified) {
+        router.push("/dashboard");
       } else {
         setMounted(true);
       }
@@ -35,37 +33,60 @@ export default function LoginPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleLogin = async () => {
+  const validatePassword = (pw: string) => {
+    if (pw.length < 8) return "Password must be at least 8 characters.";
+    if (!/[A-Z]/.test(pw)) return "Password must include at least one uppercase letter.";
+    if (!/[0-9]/.test(pw)) return "Password must include at least one number.";
+    return null;
+  };
+
+  const handleRegister = async () => {
     setError("");
+
+    if (!name.trim()) return setError("Please enter your name.");
+    if (!email.trim()) return setError("Please enter your email.");
+
+    const pwError = validatePassword(password);
+    if (pwError) return setError(pwError);
+
+    if (password !== confirm) return setError("Passwords do not match.");
+
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
-      if (!user.emailVerified) {
-        setError("Please verify your email before signing in. Check your inbox.");
-        await auth.signOut();
-        setIsLoading(false);
-        return;
-      }
+      // Set display name
+      await updateProfile(user, { displayName: name.trim() });
 
-      // Store session preference
-      if (remember) {
-        localStorage.setItem("navkon_remember", "true");
-      }
+      // Save user profile to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        role: "admin",
+        createdAt: serverTimestamp(),
+        emailVerified: false,
+      });
 
-      router.push("/dashboard");
+      // Send email verification
+      await sendEmailVerification(user);
+
+      // Sign out until they verify
+      await auth.signOut();
+
+      router.push("/login/verify-email?email=" + encodeURIComponent(email.trim()));
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code;
-      if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        setError("Invalid email or password.");
-      } else if (code === "auth/too-many-requests") {
-        setError("Too many failed attempts. Try again later or reset your password.");
+      if (code === "auth/email-already-in-use") {
+        setError("An account with this email already exists.");
       } else if (code === "auth/invalid-email") {
         setError("Please enter a valid email address.");
+      } else if (code === "auth/weak-password") {
+        setError("Password is too weak. Use at least 8 characters.");
       } else {
-        setError("Sign in failed. Please try again.");
+        setError("Registration failed. Please try again.");
       }
       setIsLoading(false);
     }
@@ -78,10 +99,20 @@ export default function LoginPage() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && email && password && !isLoading) {
-      handleLogin();
+    if (e.key === "Enter" && name && email && password && confirm && !isLoading) {
+      handleRegister();
     }
   };
+
+  const passwordStrength = () => {
+    if (!password) return null;
+    if (password.length < 6) return { label: "Weak", color: "text-red", width: "w-1/4" };
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password))
+      return { label: "Fair", color: "text-yellow-500", width: "w-2/4" };
+    return { label: "Strong", color: "text-green", width: "w-full" };
+  };
+
+  const strength = passwordStrength();
 
   if (!mounted) return null;
 
@@ -119,13 +150,30 @@ export default function LoginPage() {
               <span className="text-green">kon</span>
             </div>
             <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[1.5px] sm:tracking-[2px] text-ink-muted">
-              Admin Console
+              Create Account
             </div>
           </div>
 
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-5">
+            {/* Name */}
             <div>
-              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider sm:tracking-widest text-ink-dim mb-2">
+              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
+                Full Name
+              </div>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="John Doe"
+                disabled={isLoading}
+                className="w-full bg-surface2 border border-border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono focus:border-orange outline-none transition-colors"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
                 Email
               </div>
               <input
@@ -139,8 +187,9 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Password */}
             <div>
-              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider sm:tracking-widest text-ink-dim mb-2">
+              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
                 Password
               </div>
               <input
@@ -152,31 +201,46 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="w-full bg-surface2 border border-border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono focus:border-orange outline-none transition-colors"
               />
+              {/* Password Strength Indicator */}
+              {strength && (
+                <div className="mt-2">
+                  <div className="h-1 w-full bg-surface2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${strength.width} ${
+                        strength.label === "Weak"
+                          ? "bg-red"
+                          : strength.label === "Fair"
+                          ? "bg-yellow-500"
+                          : "bg-green"
+                      }`}
+                    />
+                  </div>
+                  <div className={`font-mono text-[9px] mt-1 ${strength.color}`}>{strength.label}</div>
+                </div>
+              )}
+              <div className="font-mono text-[9px] text-ink-ghost mt-1">
+                Min 8 chars, 1 uppercase, 1 number
+              </div>
             </div>
 
-            {/* Remember + Forgot */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="w-4 h-4 accent-orange cursor-pointer"
-                />
-                <label
-                  htmlFor="remember"
-                  className="font-mono text-[10px] sm:text-xs text-ink-muted cursor-pointer select-none"
-                >
-                  Remember me
-                </label>
+            {/* Confirm Password */}
+            <div>
+              <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-ink-dim mb-2">
+                Confirm Password
               </div>
-              <a
-                href="/login/forgot-password"
-                className="font-mono text-[10px] sm:text-xs text-orange hover:text-orange-mid transition-colors"
-              >
-                Forgot password?
-              </a>
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="••••••••"
+                disabled={isLoading}
+                className={`w-full bg-surface2 border rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-mono outline-none transition-colors
+                  ${confirm && confirm !== password ? "border-red focus:border-red" : "border-border focus:border-orange"}`}
+              />
+              {confirm && confirm !== password && (
+                <div className="font-mono text-[9px] text-red mt-1">Passwords do not match</div>
+              )}
             </div>
 
             {error && (
@@ -186,8 +250,8 @@ export default function LoginPage() {
             )}
 
             <button
-              onClick={handleLogin}
-              disabled={isLoading || !email || !password}
+              onClick={handleRegister}
+              disabled={isLoading || !name || !email || !password || !confirm}
               className="w-full bg-orange hover:bg-orange-mid disabled:opacity-50 disabled:cursor-not-allowed transition-all text-white font-medium py-3 sm:py-3.5 rounded-xl text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange/20 active:scale-[0.98]"
             >
               {isLoading ? (
@@ -205,28 +269,21 @@ export default function LoginPage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span>Verifying...</span>
+                  <span>Creating account...</span>
                 </>
               ) : (
-                "Sign In →"
+                "Create Account →"
               )}
             </button>
 
-            {/* Create Account Link */}
             <div className="text-center">
-              <span className="font-mono text-[10px] sm:text-xs text-ink-muted">
-                Don&apos;t have an account?{" "}
-              </span>
-              <a
-                href="/login/register"
-                className="font-mono text-[10px] sm:text-xs text-orange hover:text-orange-mid transition-colors"
-              >
-                Create one →
+              <span className="font-mono text-[10px] sm:text-xs text-ink-muted">Already have an account? </span>
+              <a href="/login" className="font-mono text-[10px] sm:text-xs text-orange hover:text-orange-mid transition-colors">
+                Sign in →
               </a>
             </div>
           </div>
 
-          {/* Footer */}
           <div className="text-center mt-6 sm:mt-8 font-mono text-[8px] sm:text-[9px] text-ink-ghost tracking-wider sm:tracking-widest">
             NAVKON LABS · INTERNAL PORTAL
           </div>
@@ -234,7 +291,7 @@ export default function LoginPage() {
 
         <div className="mt-4 sm:mt-6 text-center">
           <p className="text-[10px] sm:text-xs text-ink-muted font-mono">
-            Secure access to Navkon administration portal
+            A verification email will be sent after registration
           </p>
         </div>
       </div>
