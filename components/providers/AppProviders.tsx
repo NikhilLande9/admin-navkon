@@ -8,6 +8,10 @@ import {
   useCallback,
   ReactNode,
 } from "react";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+
+/* ── Theme ────────────────────────────────────────────────────────────────── */
 
 export type ThemeName = "light" | "dark";
 
@@ -35,22 +39,54 @@ export function useTheme() {
 
 function applyTheme(theme: ThemeName) {
   const html = document.documentElement;
-  // Remove all known theme classes
   Object.values(THEME_CLASS_MAP).forEach((cls) => { if (cls) html.classList.remove(cls); });
   const cls = THEME_CLASS_MAP[theme];
   if (cls) html.classList.add(cls);
 }
 
+/* ── Auth ─────────────────────────────────────────────────────────────────── */
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AppProviders");
+  return ctx;
+}
+
+/* ── Provider ─────────────────────────────────────────────────────────────── */
+
 export default function AppProviders({ children }: { children: ReactNode }) {
+  // Theme
   const [theme, setThemeState] = useState<ThemeName>("dark");
   const [mounted, setMounted] = useState(false);
 
+  // Auth
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  /* Theme init */
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as ThemeName | null;
     const initial: ThemeName = saved === "light" || saved === "dark" ? saved : "dark";
     setThemeState(initial);
     applyTheme(initial);
     setMounted(true);
+  }, []);
+
+  /* Auth listener */
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   const setTheme = useCallback((next: ThemeName) => {
@@ -63,20 +99,22 @@ export default function AppProviders({ children }: { children: ReactNode }) {
     setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
 
+  const logout = useCallback(async () => {
+    await signOut(auth);
+  }, []);
+
   return (
-    <ThemeContext.Provider value={{ theme, dark: theme === "dark", toggleTheme, setTheme }}>
-      {/*
-        Use opacity instead of visibility so layout doesn't collapse during SSR flash.
-        Transition prevents the jarring pop-in.
-      */}
-      <div
-        style={{
-          opacity: mounted ? 1 : 0,
-          transition: "opacity 0.15s ease",
-        }}
-      >
-        {children}
-      </div>
-    </ThemeContext.Provider>
+    <AuthContext.Provider value={{ user, loading: authLoading, logout }}>
+      <ThemeContext.Provider value={{ theme, dark: theme === "dark", toggleTheme, setTheme }}>
+        <div
+          style={{
+            opacity: mounted ? 1 : 0,
+            transition: "opacity 0.15s ease",
+          }}
+        >
+          {children}
+        </div>
+      </ThemeContext.Provider>
+    </AuthContext.Provider>
   );
 }

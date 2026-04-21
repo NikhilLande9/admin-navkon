@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
+import { useAuth } from "@/components/providers/AppProviders";
 
 export default function DashboardLayout({
   children,
@@ -11,17 +12,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // Auth guard
   useEffect(() => {
-    const isLoggedIn =
-      localStorage.getItem("isLoggedIn") ||
-      sessionStorage.getItem("isLoggedIn");
-
-    if (!isLoggedIn) {
+    if (!loading && !user) {
       router.push("/login");
     }
-  }, [router]);
+  }, [user, loading, router]);
+
+  // Show nothing while Firebase resolves auth state
+  if (loading || !user) return null;
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-mono">

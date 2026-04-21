@@ -1,9 +1,18 @@
 "use client";
 
-import { useTheme } from "@/components/providers/AppProviders";
+import { useTheme, useAuth } from "@/components/providers/AppProviders";
 
 export default function Topbar() {
   const { dark, toggleTheme } = useTheme();
+  const { user } = useAuth();
+
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Admin";
+  const initials = displayName
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <header className="h-14 sm:h-16 bg-surface border-b border-border flex items-center justify-between px-3 sm:px-6 shrink-0 transition-colors">
@@ -36,9 +45,12 @@ export default function Topbar() {
           <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-2 h-2 bg-orange rounded-full border-2 border-surface" />
         </button>
 
-        {/* Avatar */}
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-orange-dim border border-orange-border flex items-center justify-center text-xs font-bold text-orange cursor-pointer font-mono hover:scale-105 transition-transform active:scale-95">
-          N
+        {/* Avatar — shows real user initials */}
+        <div
+          title={user?.email || ""}
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-orange-dim border border-orange-border flex items-center justify-center text-xs font-bold text-orange cursor-pointer font-mono hover:scale-105 transition-transform active:scale-95"
+        >
+          {initials}
         </div>
       </div>
     </header>

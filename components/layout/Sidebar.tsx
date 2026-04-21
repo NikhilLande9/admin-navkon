@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -10,7 +10,9 @@ import {
   Server,
   Settings,
   X,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/components/providers/AppProviders";
 
 const navItems = [
   { name: "Dashboard", path: "/dashboard",          icon: LayoutDashboard },
@@ -22,7 +24,10 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const isActive = (path: string) => {
     if (path === "/dashboard") return pathname === "/dashboard";
@@ -37,18 +42,37 @@ export default function Sidebar() {
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.push("/login");
+    } catch {
+      setLoggingOut(false);
+    }
+  };
+
+  // Derive display name & initials from Firebase user
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Admin";
+  const initials = displayName
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   const SidebarContent = () => (
-    <>
-      <div className="p-6">
+    <div className="flex flex-col h-full">
+      <div className="p-6 flex-1">
         {/* Brand Header */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
@@ -94,14 +118,34 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer */}
-      <div className="mt-auto p-6 border-t border-border">
-        <div className="text-[9px] font-mono uppercase tracking-widest text-ink-ghost leading-relaxed">
-          <div>Navkon Labs</div>
-          <div className="opacity-60">UDYAM-MH-33-0750188</div>
+      {/* Footer: user info + logout */}
+      <div className="p-4 border-t border-border">
+        {/* User row */}
+        <div className="flex items-center gap-3 px-2 py-2 mb-2">
+          <div className="w-8 h-8 rounded-full bg-orange-dim border border-orange-border flex items-center justify-center text-xs font-bold text-orange font-mono shrink-0">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-sans font-medium text-ink truncate">{displayName}</div>
+            <div className="text-[10px] font-mono text-ink-ghost truncate">{user?.email}</div>
+          </div>
+        </div>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-sans font-medium text-ink-muted border border-transparent hover:bg-red-dim hover:text-red hover:border-red transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <LogOut size={16} strokeWidth={1.75} className="shrink-0" />
+          {loggingOut ? "Signing out…" : "Sign Out"}
+        </button>
+
+        <div className="mt-3 px-2 text-[9px] font-mono uppercase tracking-widest text-ink-ghost opacity-60">
+          UDYAM-MH-33-0750188
         </div>
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -135,7 +179,7 @@ export default function Sidebar() {
 
       {/* Mobile Drawer */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 bottom-0 w-[280px] bg-surface border-r border-border flex flex-col z-50 transform transition-transform duration-300 ${
+        className={`lg:hidden fixed top-0 left-0 bottom-0 w-70 bg-surface border-r border-border flex flex-col z-50 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
