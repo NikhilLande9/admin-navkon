@@ -1,9 +1,8 @@
-//app\login\page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
@@ -20,6 +19,10 @@ export default function LoginPage() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("navkon_theme");
     setIsDark(savedTheme !== "light");
+
+    // Load the remember preference
+    const savedRemember = localStorage.getItem("navkon_remember");
+    setRemember(savedRemember === "true");
 
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -45,6 +48,17 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // Set persistence BEFORE signing in
+      if (remember) {
+        // browserLocalPersistence = session persists across browser restarts
+        await setPersistence(auth, browserLocalPersistence);
+        localStorage.setItem("navkon_remember", "true");
+      } else {
+        // browserSessionPersistence = session cleared when browser closes
+        await setPersistence(auth, browserSessionPersistence);
+        localStorage.removeItem("navkon_remember");
+      }
+
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
@@ -53,10 +67,6 @@ export default function LoginPage() {
         await auth.signOut();
         setIsLoading(false);
         return;
-      }
-
-      if (remember) {
-        localStorage.setItem("navkon_remember", "true");
       }
 
       router.push("/dashboard");

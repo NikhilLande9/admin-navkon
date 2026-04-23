@@ -2,66 +2,97 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Helpers
+    // ══════════════════════════════════════════════════════════════════════
+
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    // The one hardcoded identity — always has full access.
+    function isSuperAdmin() {
       return isSignedIn() &&
         request.auth.token.email == "nikhillande9@gmail.com";
     }
 
-    function getUserRole() {
-      // Documents are keyed by lowercased email, not UID.
-      // Guard against a missing user doc to avoid permission-denied crashes.
+    // Admin status is stored as a boolean field `isAdmin` on the caller's
+    // user document (keyed by lowercased email). This is completely
+    // independent of the role label so roles can be renamed/deleted freely.
+    function callerIsAdmin() {
       let emailKey = request.auth.token.email.lower();
-      return exists(/databases/$(database)/documents/users/$(emailKey))
-        ? get(/databases/$(database)/documents/users/$(emailKey)).data.role
-        : null;
+      return isSuperAdmin() || (
+        exists(/databases/$(database)/documents/users/$(emailKey)) &&
+        get(/databases/$(database)/documents/users/$(emailKey)).data.isAdmin == true
+      );
     }
 
-    // ── Public website leads ───────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Public website leads
+    // ══════════════════════════════════════════════════════════════════════
+
     match /leads/{doc} {
       allow create: if true;
       allow read, update, delete: if false;
     }
 
-    // ── Users collection ───────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Users collection
     // Documents are keyed by lowercased email (e.g. "user@example.com").
-    // Any signed-in user can read all user docs (needed for roles page).
-    // Users can update their own non-sensitive fields.
-    // Only the hardcoded admin can create/delete docs or change roles.
+    //
+    // Read:   any signed-in user (needed for the Roles page to list users)
+    // Update: user may update their own non-sensitive fields;
+    //         any admin may update any field except isAdmin;
+    //         only Super Admin may set/clear the isAdmin flag.
+    // Create / Delete: Super Admin only.
+    // ══════════════════════════════════════════════════════════════════════
+
     match /users/{userEmail} {
       allow read: if isSignedIn();
 
-      // Users can update their own doc but cannot touch role or email
+      // Self-update: cannot touch role, isAdmin, or email
       allow update: if isSignedIn()
         && request.auth.token.email.lower() == userEmail
-        && !("role" in request.resource.data)
-        && !("email" in request.resource.data);
+        && !("role"    in request.resource.data.diff(resource.data).affectedKeys())
+        && !("isAdmin" in request.resource.data.diff(resource.data).affectedKeys())
+        && !("email"   in request.resource.data.diff(resource.data).affectedKeys());
 
-      // Only admin can create/delete user docs or change roles
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin();
+      // Regular admin: can update anything except the isAdmin flag
+      allow update: if callerIsAdmin()
+        && !("isAdmin" in request.resource.data.diff(resource.data).affectedKeys());
+
+      // Super Admin: can update absolutely anything, including isAdmin
+      allow update: if isSuperAdmin();
+
+      // Only Super Admin can create or hard-delete user documents
+      allow create, delete: if isSuperAdmin();
     }
 
-    // ── Role permissions config ────────────────────────────────────────────
-    // Anyone signed in can read (needed to filter sidebar nav).
-    // Only admin can write.
+    // ══════════════════════════════════════════════════════════════════════
+    // Role permissions config
+    // Read:  any signed-in user (sidebar needs it to filter nav items)
+    // Write: any admin (both Super Admin and regular admins can manage roles)
+    // ══════════════════════════════════════════════════════════════════════
+
     match /config/rolePermissions {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read:  if isSignedIn();
+      allow write: if callerIsAdmin();
     }
 
-    // ── Everything else in config ──────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Everything else in config
+    // ══════════════════════════════════════════════════════════════════════
+
     match /config/{doc} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read:  if isSignedIn();
+      allow write: if callerIsAdmin();
     }
 
-    // ── All other collections ──────────────────────────────────────────────
-    // Signed-in users can read/write (adjust per collection as needed)
+    // ══════════════════════════════════════════════════════════════════════
+    // All other collections — signed-in users can read/write
+    // (tighten per collection as needed)
+    // ══════════════════════════════════════════════════════════════════════
+
     match /{document=**} {
       allow read, write: if isSignedIn();
     }
